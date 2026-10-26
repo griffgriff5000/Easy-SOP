@@ -1,6 +1,8 @@
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime, timezone
 import uuid
+import math
+from PIL import ImageColor
 
 
 def now():
@@ -72,23 +74,38 @@ class Project:
                 if not isinstance(step.id, str) or not step.id or any(c not in "0123456789abcdef-" for c in step.id):
                     raise ValueError("Invalid step identifier")
                 if step.marker is not None:
-                    if len(step.marker) != 2 or not all(isinstance(x, (int, float)) for x in step.marker):
+                    if len(step.marker) != 2 or not all(isinstance(x, (int, float)) and math.isfinite(x) for x in step.marker):
                         raise ValueError("Invalid marker")
                     step.marker = tuple(step.marker)
                 step.annotations = [Annotation(**a) for a in row.get("annotations", [])]
                 for a in step.annotations:
                     if a.kind not in {"arrow", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
                         raise ValueError("Invalid annotation")
-                    if not all(isinstance(x, (int, float)) for x in a.points):
+                    if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in a.points):
                         raise ValueError("Invalid annotation coordinates")
+                    ImageColor.getrgb(a.color)
+                    if not isinstance(a.width, int) or not 1 <= a.width <= 30:
+                        raise ValueError("Invalid annotation width")
+                for name in ("title", "description", "notes", "timestamp"):
+                    if not isinstance(getattr(step, name), str):
+                        raise ValueError(f"Invalid step {name}")
+                if step.image is not None and not isinstance(step.image, str):
+                    raise ValueError("Invalid image reference")
+                if not isinstance(step.marker_visible, bool):
+                    raise ValueError("Invalid marker visibility")
                 project.steps.append(step)
             if len({s.id for s in project.steps}) != len(project.steps):
                 raise ValueError("Duplicate step identifiers")
-            for name in ("title", "company", "reference", "version", "author", "purpose", "scope", "prerequisites", "revision_history"):
+            for name in ("title", "company", "reference", "version", "author", "reviewer", "approver", "created", "updated", "status", "purpose", "scope", "prerequisites", "revision_history"):
                 if not isinstance(getattr(project, name), str):
                     raise ValueError(f"Invalid {name}")
-            if not 5 <= int(project.marker_size) <= 150:
+            if not isinstance(project.marker_size, int) or not 5 <= project.marker_size <= 150:
                 raise ValueError("Invalid marker size")
+            ImageColor.getrgb(project.marker_color)
+            if project.orientation not in {"portrait", "landscape"} or project.status not in {"Draft", "Approved"}:
+                raise ValueError("Invalid document orientation or status")
+            if not isinstance(project.marker_numbers, bool):
+                raise ValueError("Invalid marker numbering")
             return project
         except (TypeError, KeyError, AttributeError) as exc:
             raise ValueError(f"Invalid project data: {exc}") from exc

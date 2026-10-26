@@ -7,8 +7,10 @@ import os
 from pathlib import Path
 import queue
 import threading
+import time
 
 from PIL import Image, ImageStat
+from .models import now
 
 
 @dataclass(frozen=True)
@@ -17,6 +19,15 @@ class WindowInfo:
     pid: int
     title: str
     application: str
+
+
+@dataclass(frozen=True)
+class MouseEvent:
+    monotonic: float
+    timestamp: str
+    foreground: int
+    owner: int
+    generation: int | None
 
 
 def _api():
@@ -253,9 +264,10 @@ def parse_hotkey(text):
 
 
 class NativeInput:
-    def __init__(self, on_mouse, on_manual, before_click=False):
+    def __init__(self, on_mouse, on_manual, before_click=False, context=None):
         self.on_mouse, self.on_manual = on_mouse, on_manual
         self.before_click = before_click
+        self.context = context
         self.ready = threading.Event()
         self.error = None
         self.thread = None
@@ -290,7 +302,11 @@ class NativeInput:
         def hook(code, message, payload):
             if code >= 0 and message in buttons:
                 mouse = C.cast(payload, C.POINTER(Mouse)).contents
-                self.events.put(((mouse.point.x, mouse.point.y), buttons[message]))
+                # Only cheap identity reads in the hook; no rendering, I/O or validation.
+                event = MouseEvent(time.monotonic(), now(), int(u.GetAncestor(u.GetForegroundWindow(), 2) or 0),
+                                   int(u.GetAncestor(u.WindowFromPoint(mouse.point), 2) or 0),
+                                   self.context() if self.context else 0)
+                self.events.put(((mouse.point.x, mouse.point.y), buttons[message], event))
                 u.PostThreadMessageW(self.thread_id, 0x8001, 0, 0)
             return u.CallNextHookEx(None, code, message, payload)
         self.callback = hook_type(hook)
@@ -312,8 +328,8 @@ class NativeInput:
                     self.on_manual()
                 elif msg.message == 0x8001:
                     while not self.events.empty():
-                        point, button = self.events.get()
-                        self.on_mouse(point, button)
+                        point, button, event = self.events.get()
+                        self.on_mouse(point, button, event)
         except Exception as exc:
             self.error = str(exc)
             self.ready.set()

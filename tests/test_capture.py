@@ -1,4 +1,5 @@
 import time
+import threading
 from PIL import Image
 
 from sop_capture.capture import CaptureSession, CaptureOptions
@@ -73,3 +74,68 @@ def test_buttons_and_outside_target_ignored():
     s.trigger((250, 30), "left")
     s.stop()
     assert not results
+
+
+def test_cache_capture_crossing_pause_resume_is_discarded():
+    entered, release = threading.Event(), threading.Event()
+    class SlowBackend(Backend):
+        def capture(self, target, foreground=True):
+            entered.set()
+            release.wait(2)
+            return Image.new("RGB", (200, 100), "red"), (0, 0, 200, 100)
+    results, errors = [], []
+    s = CaptureSession(SlowBackend(), results.append, errors.append)
+    s.start(WindowInfo(123, 456, "Example", "example.exe"), CaptureOptions(before_click=True))
+    assert entered.wait(1)
+    s.pause()
+    s.resume()
+    release.set()
+    time.sleep(.03)
+    s.trigger((20, 20), "left")
+    s.stop()
+    assert not results
+
+
+def test_native_event_from_previous_epoch_or_other_window_is_discarded():
+    from sop_capture.windows import MouseEvent
+    s, b, results, errors = session()
+    epoch = s.input_context()
+    event = MouseEvent(time.monotonic(), "2026-10-26T10:00:00+00:00", 123, 123, epoch)
+    s.pause()
+    s.resume()
+    s.trigger((20, 20), "left", event)
+    foreign = MouseEvent(time.monotonic(), "2026-10-26T10:00:00+00:00", 999, 999, s.input_context())
+    s.trigger((20, 20), "left", foreign)
+    s.stop()
+    assert not results
+
+
+def test_preclick_frame_newer_than_event_is_rejected():
+    from sop_capture.windows import MouseEvent
+    s, b, results, errors = session(CaptureOptions(before_click=True))
+    occurred = time.monotonic()
+    time.sleep(.2)
+    event = MouseEvent(occurred, "2026-10-26T10:00:00+00:00", 123, 123, s.input_context())
+    s.trigger((20, 20), "left", event)
+    s.stop()
+    assert not results
+
+
+def test_bounded_queue_reports_overload_without_dropping_accepted_work():
+    entered, release = threading.Event(), threading.Event()
+    class BlockingBackend(Backend):
+        def capture(self, target, foreground=True):
+            entered.set()
+            release.wait(2)
+            return super().capture(target, foreground)
+    results, errors = [], []
+    s = CaptureSession(BlockingBackend(), results.append, errors.append)
+    s.start(WindowInfo(123, 456, "Example", "example.exe"), CaptureOptions(delay_ms=0, max_queue=1))
+    s.manual()
+    assert entered.wait(1)
+    s.manual()
+    s.manual()
+    release.set()
+    s.stop()
+    assert len(results) == 2
+    assert any("queue is full" in error.lower() for error in errors)

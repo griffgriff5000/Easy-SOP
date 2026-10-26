@@ -57,17 +57,24 @@ class CaptureSession:
             if self.state == "paused":
                 self.state = "recording"
 
-    def trigger(self, point, button):
+    def input_context(self):
+        return self.generation if self.state == "recording" else None
+
+    def trigger(self, point, button, event=None):
         if button not in self.options.buttons:
             return
-        self._enqueue(point, button)
+        self._enqueue(point, button, event)
 
     def manual(self):
         self._enqueue(None, None)
 
-    def _enqueue(self, point, button):
+    def _enqueue(self, point, button, event=None):
         with self.lock:
             if self.state != "recording":
+                return
+            event_time = event.monotonic if event else time.monotonic()
+            if event and (event.generation != self.generation or event.foreground != self.target.hwnd or
+                          event.owner != self.target.hwnd or time.monotonic()-event_time > 2):
                 return
             try:
                 bounds = self.backend.validate(self.target)
@@ -77,10 +84,10 @@ class CaptureSession:
                     if hasattr(self.backend, "owns_point") and not self.backend.owns_point(self.target, point):
                         return
                 cached = self.cache if self.options.before_click and point else None
-                if self.options.before_click and point and (cached is None or time.monotonic()-cached[2] > 1):
+                if self.options.before_click and point and (cached is None or not 0 <= event_time-cached[2] <= 1):
                     self.on_error("Pre-click frame is not ready; try again after a moment")
                     return
-                self.jobs.put_nowait((time.monotonic() + (0 if cached else self.options.delay_ms/1000), self.generation, point, button, bounds, now(), cached))
+                self.jobs.put_nowait((event_time + (0 if cached else self.options.delay_ms/1000), self.generation, point, button, bounds, event.timestamp if event else now(), cached))
             except queue.Full:
                 self.on_error("Capture queue is full; slow down and try again")
             except Exception:
@@ -95,9 +102,10 @@ class CaptureSession:
             except queue.Empty:
                 if self.options.before_click and self.state == "recording":
                     try:
+                        generation = self.generation
                         image, bounds = self.backend.capture(self.target)
                         with self.lock:
-                            if self.state == "recording":
+                            if self.state == "recording" and generation == self.generation:
                                 self.cache = (image, bounds, time.monotonic())
                     except Exception:
                         with self.lock:

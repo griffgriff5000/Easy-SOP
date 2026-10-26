@@ -1,4 +1,5 @@
 from io import BytesIO
+import math
 from PySide6.QtCore import Qt, Signal, QRectF
 from PySide6.QtGui import QPainter, QPixmap, QColor, QPen
 from PySide6.QtWidgets import QWidget
@@ -87,7 +88,10 @@ class AnnotationCanvas(QWidget):
 
     def apply_gesture(self, start, end):
         if not self.step: return
-        if self.tool != "marker" and (abs(start[0]-end[0]) < 2 or abs(start[1]-end[1]) < 2): return
+        if self.tool == "arrow":
+            if math.dist(start, end) < 2: return
+        elif self.tool != "marker" and (abs(start[0]-end[0]) < 2 or abs(start[1]-end[1]) < 2):
+            return
         self.changing.emit()
         if self.tool == "marker":
             self.step.marker = tuple(end)

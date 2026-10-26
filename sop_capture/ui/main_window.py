@@ -9,7 +9,7 @@ import threading
 import time
 
 from PIL import Image, ImageColor
-from PySide6.QtCore import QObject, Signal, Qt, QTimer, QSize, QUrl, QStandardPaths
+from PySide6.QtCore import QObject, Signal, Qt, QTimer, QSize, QUrl, QStandardPaths, QBuffer, QIODevice
 from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -60,6 +60,7 @@ def heading(layout, title, subtitle):
 
 
 def scroll(widget):
+    widget.setObjectName("scrollPage")
     area = QScrollArea()
     area.setWidgetResizable(True)
     area.setWidget(widget)
@@ -233,6 +234,7 @@ class MainWindow(QMainWindow):
         splitter = QSplitter()
         self.steps_list = QListWidget()
         self.steps_list.setIconSize(QSize(130, 72))
+        self.steps_list.setWordWrap(True)
         self.steps_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.steps_list.currentRowChanged.connect(self._select_step)
         self.steps_list.model().rowsMoved.connect(self._list_reordered)
@@ -333,6 +335,9 @@ class MainWindow(QMainWindow):
     def show_page(self, index):
         self.pages.setCurrentIndex(index)
         self.nav_buttons[index].setChecked(True)
+        page = self.pages.widget(index)
+        if isinstance(page, QScrollArea):
+            page.verticalScrollBar().setValue(0)
 
     def notice(self, message):
         self.statusBar().showMessage(message)
@@ -748,7 +753,7 @@ class MainWindow(QMainWindow):
                                      buttons=("left", "right", "middle")[:self.settings.fields["buttons"].currentIndex()+1])
             self.session = CaptureSession(self.backend, self.bridge.captured.emit, self.bridge.notice.emit)
             self.session.start(self.target, options)
-            self.native_input = NativeInput(self.session.trigger, self.session.manual, options.before_click)
+            self.native_input = NativeInput(self.session.trigger, self.session.manual, options.before_click, self.session.input_context)
             self.native_input.start(self.settings.value("shortcut"))
             self.elapsed = 0
             self.last_tick = time.monotonic()
@@ -757,7 +762,8 @@ class MainWindow(QMainWindow):
             self.showMinimized()
             self.backend.activate(self.target)
             if self.settings.value("initial"):
-                QTimer.singleShot(600, self._initial_capture)
+                session = self.session
+                QTimer.singleShot(600, lambda: self._initial_capture(session))
             self.notice("Recording selected window. Use the floating controls to pause or stop.")
         except Exception as exc:
             if self.native_input:
@@ -769,8 +775,9 @@ class MainWindow(QMainWindow):
             self.fail(exc)
         self._update_controls()
 
-    def _initial_capture(self):
-        if self.active and self.session.state == "recording": self.session.manual()
+    def _initial_capture(self, originating_session):
+        if self.session is originating_session and self.active and self.session.state == "recording":
+            self.session.manual()
 
     def toggle_pause(self):
         if not self.active or self.busy: return
@@ -862,7 +869,12 @@ class MainWindow(QMainWindow):
         safe = re.sub(r'[^\w .-]', "_", self.project.title)[:100] or "Procedure"
         path, _ = QFileDialog.getSaveFileName(self, "Export procedure PDF", str(self.store.root / "Exports" / f"{safe}.pdf"), "PDF (*.pdf)")
         if not path: return  # QFileDialog confirms replacement of existing files.
-        path = str(Path(path).with_suffix(".pdf"))
+        chosen = Path(path)
+        output = chosen.with_suffix(".pdf")
+        if output != chosen and output.exists():
+            if QMessageBox.question(self, "Replace PDF?", f"{output.name} already exists. Replace it?") != QMessageBox.StandardButton.Yes:
+                return
+        path = str(output)
         try: self.flush_save()
         except Exception as exc:
             self.fail(exc)
@@ -896,7 +908,13 @@ class MainWindow(QMainWindow):
             layout = QVBoxLayout(dialog)
             view = QPdfView(dialog)
             document = QPdfDocument(dialog)
-            document.load(str(value))
+            # Qt PDF's renderer can retain a file handle after close(). Keep the
+            # preview's source in a parent-owned memory buffer instead.
+            source = QBuffer(dialog)
+            source.setData(value.read_bytes())
+            source.open(QIODevice.OpenModeFlag.ReadOnly)
+            document.load(source)
+            dialog.finished.connect(document.close)
             view.setDocument(document)
             view.setPageMode(QPdfView.PageMode.MultiPage)
             view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
@@ -926,10 +944,17 @@ class MainWindow(QMainWindow):
             return
         try:
             self.flush_save()
-            if self.store: self.store.release()
-            if self.backend: self.backend.close()
+            # Windows holds each preview file open until its document closes.
+            from PySide6.QtPdf import QPdfDocument
+            for document in self.findChildren(QPdfDocument):
+                document.close()
+            for dialog in self.findChildren(QDialog):
+                if dialog is not self.floating:
+                    dialog.close()
             self.floating.hide()
             self.preview_dir.cleanup()
+            if self.backend: self.backend.close()
+            if self.store: self.store.release()
         except Exception as exc:
             self.fail(exc)
             event.ignore()

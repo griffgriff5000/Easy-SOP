@@ -31,44 +31,44 @@
 Files: pyproject.toml, requirements.txt, sop_capture/models.py, storage.py, geometry.py, tests/test_storage.py, tests/test_geometry.py.
 Interfaces: Project, Step and Annotation dataclasses; ProjectStore(root).save/load/add_image; screen_to_image(point, bounds, size).
 
-- [ ] Write and run failing round-trip, recovery, traversal, locking and coordinate tests.
-- [ ] Implement UUID image storage, schema validation, atomic JSON with backup and project locks; physical coordinate transforms.
-- [ ] Run pytest tests/test_storage.py tests/test_geometry.py; expect all pass. Commit.
+- [x] Write and run failing round-trip, recovery, traversal, locking and coordinate tests.
+- [x] Implement UUID image storage, schema validation, atomic JSON with backup and project locks; physical coordinate transforms.
+- [x] Run pytest tests/test_storage.py tests/test_geometry.py; expect all pass. Commit.
 
 ## Task 2: Image rendering and PDF
 
 Files: sop_capture/imaging.py, pdf_export.py, tests/test_output.py.
 Interfaces: render_step(root, step, number, style) -> Pillow Image; export_pdf(project, root, output, orientation) -> Path.
 
-- [ ] Write and run failing marker, redaction, long-text PDF, Unicode and landscape tests.
-- [ ] Implement flattened annotation rendering and corporate A4 PDF with cover, metadata, sections, steps, revision history and pagination.
-- [ ] Run full pytest; expect all pass. Commit.
+- [x] Write and run failing marker, redaction, long-text PDF, Unicode and landscape tests.
+- [x] Implement flattened annotation rendering and corporate A4 PDF with cover, metadata, sections, steps, revision history and pagination.
+- [x] Run full pytest; expect all pass. Commit.
 
 ## Task 3: Native Windows capture and lifecycle
 
 Files: sop_capture/windows.py, capture.py, tests/test_capture.py, tests/test_windows.py.
 Interfaces: WindowInfo, WindowsBackend.list_windows/validate/capture; NativeInput.start/stop; CaptureSession.start/pause/resume/stop/manual/trigger.
 
-- [ ] Write and run failing fake-backend focus, delay, pause, stop, bounded-queue and pre-click tests; Windows enumeration smoke test.
-- [ ] Implement documented native APIs, DPI setup, target identity validation, window-only PrintWindow rendering and hook/hotkey message loop with explicit cleanup.
-- [ ] Implement worker scheduling and frame cache; no native work in hook callbacks.
-- [ ] Run full pytest; expect all pass. Commit.
+- [x] Write and run failing fake-backend focus, delay, pause, stop, bounded-queue and pre-click tests; Windows enumeration smoke test.
+- [x] Implement documented native APIs, DPI setup, target identity validation, window-only PrintWindow rendering and hook/hotkey message loop with explicit cleanup.
+- [x] Implement worker scheduling and frame cache; no native work in hook callbacks.
+- [x] Run full pytest; expect all pass. Commit.
 
 ## Task 4: Desktop interface and settings
 
 Files: sop_capture/app.py, ui/main_window.py, ui/canvas.py, ui/settings.py, ui/theme.py, tests/test_ui.py.
 Interfaces: MainWindow with Capture, Editor, Document, Settings pages; annotation canvas in image coordinates; QSettings preferences.
 
-- [ ] Write and run failing offscreen UI workflow tests for project creation, editing, reorder, undo and PDF export.
-- [ ] Implement target preview/selection, toolbar, capture status, asynchronous preview, editor, annotation tools, metadata, autosave, replacement/retake, themes and PDF preview.
-- [ ] Run full pytest and launch application smoke test; expect all pass. Commit.
+- [x] Write and run failing offscreen UI workflow tests for project creation, editing, reorder, undo and PDF export.
+- [x] Implement target preview/selection, toolbar, capture status, asynchronous preview, editor, annotation tools, metadata, autosave, replacement/retake, themes and PDF preview.
+- [x] Run full pytest and launch application smoke test; expect all pass. Commit.
 
 ## Task 5: Distribution, demonstration and verification
 
 Files: SOPCaptureStudio.spec, scripts/create_demo.py, scripts/smoke_windows.py, README.md, docs/VALIDATION.md, demo/.
 
-- [ ] Generate a synthetic demonstration project and export it; verify PDF page rendering.
-- [ ] Add packaging and setup instructions; build the executable and smoke launch it.
-- [ ] Exercise a real Windows target, hooks and hotkeys where the environment permits; record actual results and unverified cases.
-- [ ] Run full pytest and git diff --check; get independent whole-branch review and fix important findings with regression tests.
-- [ ] Record final verification and deliver runnable source/executable with limitations stated.
+- [x] Generate a synthetic demonstration project and export it; verify PDF page rendering.
+- [x] Add packaging and setup instructions; build the executable and smoke launch it.
+- [x] Exercise a real Windows target, hooks and hotkeys where the environment permits; record actual results and unverified cases.
+- [x] Run full pytest and git diff --check; get independent whole-branch review and fix important findings with regression tests.
+- [x] Record final verification and deliver runnable source/executable with limitations stated.

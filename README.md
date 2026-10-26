@@ -25,6 +25,10 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 5. Stop, edit step titles/descriptions/notes, drag steps to reorder and add manual steps as needed. Select annotation tools and drag on the screenshot. Click or drag with the marker tool to move its marker. Undo/redo also covers edits, deletion and image replacement.
 6. Complete the Document page, preview the PDF and export. File dialogs confirm replacement of existing exports. Changes autosave locally; Ctrl+S flushes immediately.
 
+To reuse a screenshot for another instruction, select its step and choose **Duplicate step**. The copy is inserted immediately afterward, with independent titles, markers and annotations. It shares the preserved original image, so editing either copy does not change the other.
+
+To adjust an existing arrow, circle, highlight or redaction, choose **Edit annotations** from the tool list. Drag the shape's body to move it, or drag a square handle to resize it/change an arrow endpoint. Choose **Delete selected** to remove the selected shape. Moves, resizing, deletion and duplication all support Undo/Redo and autosave. Moving a redaction can reveal previously covered content; review the result before exporting.
+
 Choose a window on Capture before using **Retake selected window** in the editor. Retaking captures one image and clears that step's old marker/annotations; Undo restores them. **Replace screenshot** imports an image and also clears prior annotations. Original image files are preserved in both cases.
 
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.

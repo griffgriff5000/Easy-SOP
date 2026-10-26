@@ -31,3 +31,9 @@ After those fixes: **33 tests passed**. No minor findings were deferred by the r
 Additional final checks cover bounded-queue overload (accepted work is drained; excess triggers are reported) and loading/closing the actual Qt PDF preview. The latter reproduced a Windows file-lock failure: closing a PDF document did not immediately release its renderer's source file handle. Preview now loads from a parent-owned memory buffer, and project locks are released only after successful shutdown cleanup. Final suite: **35 passed**.
 
 The packaged rendering check uses the same frozen child command protocol and module path as a packaged parent. An early source-parent simulation incorrectly passed Microsoft Store Python paths to the frozen child, causing an access-denied DLL import; correcting that test harness made both console and windowed packaged renderer checks pass. No Windows security policy or DLL permissions were changed.
+
+## Annotation placement and duplicate screenshots — 26 October
+
+Added Edit annotations: drag existing shapes to reposition them, drag handles to resize areas or change arrow endpoints, and delete the selected annotation. Image-coordinate transforms keep behavior consistent at scaled preview sizes; selection overlays are UI-only. Added Duplicate step, which deep-copies metadata and annotations under a fresh ID while sharing its immutable original PNG. Both features use existing undo/redo and autosave paths.
+
+An independent review identified signed-dimension checks rejecting movement of reverse-drawn area shapes. Four failing parameterized tests reproduced it; absolute dimension checks fixed it. Final feature suite: 42 passed, including an actual Qt mouse-drag test. Visual QA now uses temporary copies of the demo and memory-backed PDF input, leaving the distributed example unchanged.

@@ -7,6 +7,7 @@ import re
 import tempfile
 import threading
 import time
+import uuid
 
 from PIL import Image, ImageColor
 from PySide6.QtCore import QObject, Signal, Qt, QTimer, QSize, QUrl, QStandardPaths, QBuffer, QIODevice
@@ -220,9 +221,9 @@ class MainWindow(QMainWindow):
     def _editor_page(self):
         page = QWidget()
         box = QVBoxLayout(page)
-        heading(box, "Every step, clearly explained.", "Drag steps to reorder. Select a tool, then drag over the screenshot to annotate or redact.")
+        heading(box, "Every step, clearly explained.", "Duplicate a step to reuse its screenshot. Use Edit annotations to drag shapes or resize their handles.")
         actions = QHBoxLayout()
-        for text, callback in (("Add step", self.add_step), ("Delete", self.delete_step), ("Move up", lambda: self.move_step(-1)),
+        for text, callback in (("Add step", self.add_step), ("Duplicate step", self.duplicate_step), ("Delete", self.delete_step), ("Move up", lambda: self.move_step(-1)),
                                ("Move down", lambda: self.move_step(1)), ("Undo", self.undo), ("Redo", self.redo)):
             actions.addWidget(button(text, callback))
         actions.addStretch()
@@ -253,13 +254,18 @@ class MainWindow(QMainWindow):
         right.addWidget(self.step_description)
         tools = QHBoxLayout()
         self.tool_picker = QComboBox()
-        for label, tool in (("Move click marker", "marker"), ("Arrow", "arrow"), ("Circle", "circle"), ("Highlight box", "highlight"), ("Solid redaction", "redact"), ("Blur", "blur")):
+        for label, tool in (("Move click marker", "marker"), ("Edit annotations", "edit"), ("Arrow", "arrow"), ("Circle", "circle"), ("Highlight box", "highlight"), ("Solid redaction", "redact"), ("Blur", "blur")):
             self.tool_picker.addItem(label, tool)
         self.canvas = AnnotationCanvas()
         self.tool_picker.currentIndexChanged.connect(lambda: self.canvas.set_tool(self.tool_picker.currentData()))
         self.canvas.changing.connect(self.checkpoint)
         self.canvas.changed.connect(self.edited)
         tools.addWidget(self.tool_picker)
+        self.delete_annotation_button = button("Delete selected", self.canvas.delete_selected)
+        self.delete_annotation_button.setEnabled(False)
+        self.delete_annotation_button.setToolTip("Choose Edit annotations, then click a shape to select it")
+        self.canvas.selection_changed.connect(self.delete_annotation_button.setEnabled)
+        tools.addWidget(self.delete_annotation_button)
         tools.addWidget(button("Remove last annotation", self.remove_annotation))
         self.marker_check = QCheckBox("Click marker")
         self.marker_check.toggled.connect(self._marker_toggled)
@@ -597,6 +603,16 @@ class MainWindow(QMainWindow):
         self.checkpoint()
         self.project.steps.remove(step)
         self._refresh_steps()
+        self.edited()
+
+    def duplicate_step(self):
+        source = self.current_step()
+        if not source or self.active or self.busy: return
+        self.checkpoint()
+        duplicate = deepcopy(source)
+        duplicate.id = uuid.uuid4().hex
+        self.project.steps.insert(self.project.steps.index(source)+1, duplicate)
+        self._refresh_steps(duplicate.id)
         self.edited()
 
     def move_step(self, delta):

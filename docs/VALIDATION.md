@@ -6,12 +6,13 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 
 | Check | Result |
 | --- | --- |
-| Full automated suite | 35 passed, including PDF preview/shutdown and bounded-queue coverage |
+| Full automated suite | 42 passed, including PDF preview/shutdown, bounded-queue coverage, annotation editing and duplication |
 | Domain and storage | Round-trip, immutable replacement images, reorder associations, recovery backup, path confinement, locking and schema validation passed |
 | Coordinates | Negative monitor origin, image scaling, outside clicks and invalid dimensions passed |
 | Output | Flattened redactions preserve originals, missing images, Unicode Latin text, long titles/descriptions and landscape PDF passed |
 | Capture orchestration | Delayed focus rejection, stop draining, pause invalidation, pre-click frames, cache acquisition crossing pause/resume, stale/foreign input and newer-than-event frame rejection passed |
 | Qt editor | Field persistence, undo/redo, reorder/export, canvas redaction and horizontal arrow behavior passed |
+| Annotation editing / duplication | Independent duplicate steps, saved annotation movement, corner/arrow endpoint resizing, selected deletion, scaled Qt mouse drags, and reverse-drawn shape movement passed |
 | Real Windows native APIs | Window inventory, isolated synthetic-window rendering (716 × 469 pixels), low-level hook/global hotkey registration and cleanup passed |
 | Packaged rendering child | Synthetic target rendered successfully through the bundled executable's multiprocessing protocol |
 | Source application | Launch and timed close completed with exit code 0 |
@@ -21,6 +22,8 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 | Dependency consistency | `pip check`: no broken requirements |
 
 The independent source reviewer found four important issues; all were reproduced by new failing tests, fixed, and followed by a passing full suite. Details are in [IMPLEMENTATION.md](IMPLEMENTATION.md).
+
+The subsequent annotation-editing feature received an independent review. One movement issue affecting reverse-drawn shapes was reproduced for circles, highlights, solid redactions and blur regions, then fixed. The editor's selection handles and updated toolbar were visually inspected. Source and executable were rebuilt after the feature changes.
 
 ## Limits of this verification
 

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "id": "cfb9b6645ec4432fb9750845a470a5ae",
+  "title": "Create a work permit",
+  "company": "Example Engineering",
+  "logo": null,
+  "reference": "DEMO-SOP-001",
+  "version": "1.0",
+  "author": "SOP Capture Studio",
+  "reviewer": "",
+  "approver": "",
+  "status": "Draft",
+  "created": "2026-10-26T09:00:00+00:00",
+  "updated": "2026-10-26T06:06:23+00:00",
+  "purpose": "Create a work permit and confirm its details before submitting it for review.",
+  "scope": "Demonstration of a local SOP project using a fictional application and synthetic information.",
+  "prerequisites": "Access to the permit dashboard and the relevant work order. All screenshots in this example are fictional.",
+  "revision_history": "1.0 — Initial issue",
+  "orientation": "portrait",
+  "marker_color": "#ef4444",
+  "marker_size": 24,
+  "marker_numbers": true,
+  "steps": [
+    {
+      "id": "5ef7af3597664cb6b3abd0ebdec19ae9",
+      "title": "Open Permit Management",
+      "description": "Choose Permit Management from the navigation menu to view the available permits.",
+      "notes": "",
+      "image": "Screenshots/7ffb935d74554056b47a1fc9afcb02bc.png",
+      "timestamp": "2026-10-26T05:54:52+00:00",
+      "button": "left",
+      "marker": [
+        133,
+        220
+      ],
+      "marker_visible": true,
+      "annotations": [],
+      "capture_bounds": [],
+      "frame_age_ms": null
+    },
+    {
+      "id": "284d2e068ec146a7b95c298e6beb0f41",
+      "title": "Create a new permit",
+      "description": "Select New permit. Enter the work package and check the proposed location. Redact sensitive information before sharing screenshots.",
+      "notes": "Solid redactions remove visible pixels from the exported image. Original project images remain unredacted.",
+      "image": "Screenshots/850069bbd5a54f9e8fb5d0f7b3fc7fc5.png",
+      "timestamp": "2026-10-26T05:54:52+00:00",
+      "button": "left",
+      "marker": [
+        1070,
+        155
+      ],
+      "marker_visible": true,
+      "annotations": [
+        {
+          "kind": "redact",
+          "points": [
+            295,
+            510,
+            650,
+            548
+          ],
+          "color": "#ef4444",
+          "width": 4
+        }
+      ],
+      "capture_bounds": [],
+      "frame_age_ms": null
+    },
+    {
+      "id": "44cf321875fd4dd392681a9d75e1da20",
+      "title": "Review and submit",
+      "description": "Check the work area, task description and required approvals. Select Submit for review when the details are correct.",
+      "notes": "",
+      "image": "Screenshots/e95cb51546be4c91bd9f4b29152729db.png",
+      "timestamp": "2026-10-26T05:54:52+00:00",
+      "button": "left",
+      "marker": [
+        1000,
+        650
+      ],
+      "marker_visible": true,
+      "annotations": [],
+      "capture_bounds": [],
+      "frame_age_ms": null
+    }
+  ]
+}

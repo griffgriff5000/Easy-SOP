@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run SOP Capture Studio",
+			"type": "shell",
+			"command": ".\\.venv\\Scripts\\python.exe",
+			"args": [
+				"run_studio.py"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run SOP Capture Studio (packaged)",
+			"type": "shell",
+			"command": ".\\dist\\SOPCaptureStudio\\SOPCaptureStudio.exe",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

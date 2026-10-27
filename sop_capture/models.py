@@ -61,6 +61,7 @@ class Project:
     marker_size: int = 24
     marker_numbers: bool = True
     steps: list[Step] = field(default_factory=list)
+    template: dict = field(default_factory=dict)
 
     def to_dict(self):
         return asdict(self)
@@ -118,6 +119,8 @@ class Project:
                 raise ValueError("Invalid document orientation or status")
             if not isinstance(project.marker_numbers, bool):
                 raise ValueError("Invalid marker numbering")
+            from .templates import validate_snapshot
+            validate_snapshot(project.template)
             return project
         except (TypeError, KeyError, AttributeError) as exc:
             raise ValueError(f"Invalid project data: {exc}") from exc

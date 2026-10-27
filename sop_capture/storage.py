@@ -81,6 +81,8 @@ class ProjectStore:
                 self.resolve(step.image)
         if project.logo:
             self.resolve(project.logo)
+        for key in ("logo", "docx"):
+            if project.template.get(key): self.resolve(project.template[key])
         project.updated = now()
         path = self.root / "project.json"
         if path.exists():
@@ -100,6 +102,8 @@ class ProjectStore:
                     self.resolve(step.image)
             if project.logo:
                 self.resolve(project.logo)
+            for key in ("logo", "docx"):
+                if project.template.get(key): self.resolve(project.template[key])
             return project
         except (OSError, ValueError) as exc:
             raise ValueError(f"Cannot open project: {exc}. A project.backup.json may be recoverable.") from exc

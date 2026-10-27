@@ -14,21 +14,32 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, 
 from .geometry import fit_rect
 from .imaging import font_path, render_step
 from .storage import ProjectStore, atomic_bytes
+from .templates import appearance
 
 
 def export_pdf(project, root, output, orientation=None):
+    from copy import copy
+    project = copy(project)
+    settings = appearance(project.template.get("settings", {}))
+    project.company = project.company or settings["company"]
+    project.logo = project.template.get("logo") or project.logo
     output = Path(output)
     for name, bold in (("Vera", False), ("VeraBold", True)):
         if name not in pdfmetrics.getRegisteredFontNames():
             pdfmetrics.registerFont(TTFont(name, str(font_path(bold))))
-    page_size = landscape(A4) if (orientation or project.orientation) == "landscape" else A4
+    selected_orientation = project.orientation if settings["orientation"] == "project" else settings["orientation"]
+    page_size = landscape(A4) if (orientation or selected_orientation) == "landscape" else A4
     stream = BytesIO()
-    doc = SimpleDocTemplate(stream, pagesize=page_size, leftMargin=20*mm, rightMargin=20*mm,
-                            topMargin=22*mm, bottomMargin=20*mm, title=project.title, author=project.author)
+    margin = settings["margin_mm"]*mm
+    doc = SimpleDocTemplate(stream, pagesize=page_size, leftMargin=margin, rightMargin=margin,
+                            topMargin=margin+2*mm, bottomMargin=margin, title=project.title, author=project.author)
     styles = getSampleStyleSheet()
-    body = ParagraphStyle("SOPBody", fontName="Vera", fontSize=9, leading=14, spaceAfter=10, splitLongWords=True)
-    heading = ParagraphStyle("SOPHeading", parent=body, fontName="VeraBold", fontSize=16, leading=21, textColor=colors.HexColor("#15344b"), spaceBefore=14, keepWithNext=True)
-    title = ParagraphStyle("SOPTitle", parent=heading, fontSize=29, leading=36, spaceAfter=25)
+    regular = settings["font"]
+    bold = {"Vera": "VeraBold", "Helvetica": "Helvetica-Bold", "Times-Roman": "Times-Bold", "Courier": "Courier-Bold"}[regular]
+    body = ParagraphStyle("SOPBody", fontName=regular, fontSize=settings["body_size"], leading=settings["body_size"]*1.55,
+                          textColor=colors.HexColor(settings["text_color"]), spaceAfter=10, splitLongWords=True)
+    heading = ParagraphStyle("SOPHeading", parent=body, fontName=bold, fontSize=settings["heading_size"], leading=settings["heading_size"]*1.35, textColor=colors.HexColor(settings["heading_color"]), spaceBefore=14, keepWithNext=True)
+    title = ParagraphStyle("SOPTitle", parent=heading, fontSize=settings["title_size"], leading=settings["title_size"]*1.25, spaceAfter=25)
     small = ParagraphStyle("SOPSmall", parent=body, fontSize=8, textColor=colors.HexColor("#526777"))
     story = []
 
@@ -41,7 +52,7 @@ def export_pdf(project, root, output, orientation=None):
             for start in range(0, max(1, len(line)), 3000):
                 story.append(para(line[start:start+3000], style))
 
-    if project.logo:
+    if project.logo and settings["cover"]:
         try:
             from PIL import Image
             logo_path = ProjectStore(root).resolve(project.logo)
@@ -50,13 +61,14 @@ def export_pdf(project, root, output, orientation=None):
             story.append(PDFImage(str(logo_path), width=w, height=h, hAlign="LEFT"))
         except (OSError, ValueError):
             story.append(para("Company logo unavailable", small))
-    content(project.company or "STANDARD OPERATING PROCEDURE", small)
-    story.append(Spacer(1, 30*mm))
-    content(project.title, title)
-    content(f"{project.reference}  |  Version {project.version}  |  {project.status}", heading)
-    for label, value in (("Author", project.author), ("Created", project.created[:10]), ("Updated", project.updated[:10]), ("Reviewer", project.reviewer), ("Approver", project.approver)):
-        content(f"{label}: {value or '—'}")
-    story.append(PageBreak())
+    if settings["cover"]:
+        content(project.company or "STANDARD OPERATING PROCEDURE", small)
+        story.append(Spacer(1, 30*mm))
+        content(project.title, title)
+        content(f"{project.reference}  |  Version {project.version}  |  {project.status}", heading)
+        for label, value in (("Author", project.author), ("Created", project.created[:10]), ("Updated", project.updated[:10]), ("Reviewer", project.reviewer), ("Approver", project.approver)):
+            content(f"{label}: {value or '—'}")
+        story.append(PageBreak())
     content("Document information", heading)
     content(f"{project.title}\nReference: {project.reference}\nVersion: {project.version}\nStatus: {project.status}")
     for label, text in (("Purpose", project.purpose), ("Scope", project.scope), ("Prerequisites", project.prerequisites)):
@@ -67,6 +79,7 @@ def export_pdf(project, root, output, orientation=None):
     if not project.steps:
         content("No procedural steps have been added.")
     for number, step in enumerate(project.steps, 1):
+        if settings["page_per_step"]: story.append(PageBreak())
         step_heading = para(f"{number:02d}  {step.title}", heading)
         image_item = None
         if step.image:
@@ -75,7 +88,7 @@ def export_pdf(project, root, output, orientation=None):
                 data = BytesIO()
                 image.save(data, "PNG")
                 data.seek(0)
-                width, height = fit_rect(image.size, (doc.width, min(doc.height * .58, 350)))
+                width, height = fit_rect(image.size, (doc.width*settings["image_width_percent"]/100, min(doc.height * .58, 350)))
                 image_item = PDFImage(data, width=width, height=height)
             except (OSError, ValueError):
                 image_item = para("Image unavailable — replace the screenshot in the editor.", small)
@@ -100,12 +113,18 @@ def export_pdf(project, root, output, orientation=None):
         canvas.saveState()
         canvas.setStrokeColor(colors.HexColor("#d5e0e8"))
         canvas.line(doc.leftMargin, page_size[1]-16*mm, page_size[0]-doc.rightMargin, page_size[1]-16*mm)
-        canvas.setFont("Vera", 8)
+        canvas.setFont(regular, 8)
         canvas.setFillColor(colors.HexColor("#526777"))
         # Keep arbitrary metadata out of a fixed-width header.
-        header = project.reference[:50] + "  |  " + project.status[:15]
-        canvas.drawString(doc.leftMargin, page_size[1]-13*mm, header)
-        canvas.drawString(doc.leftMargin, 12*mm, "SOP Capture Studio")
+        def line(text, width):
+            for key in ("title", "reference", "version", "company"):
+                text = text.replace("{"+key+"}", getattr(project, key))
+            while text and pdfmetrics.stringWidth(text, regular, 8) > width:
+                text = text[:-2] + "…" if len(text) > 2 else ""
+            return text
+        header = settings["header"] or project.reference + "  |  " + project.status
+        canvas.drawString(doc.leftMargin, page_size[1]-13*mm, line(header, doc.width))
+        canvas.drawString(doc.leftMargin, 12*mm, line(settings["footer"], doc.width-70))
         canvas.drawRightString(page_size[0]-doc.rightMargin, 12*mm, f"Page {document.page}")
         canvas.restoreState()
 

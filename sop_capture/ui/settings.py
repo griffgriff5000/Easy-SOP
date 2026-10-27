@@ -1,6 +1,6 @@
 from pathlib import Path
 from PySide6.QtCore import QSettings, QStandardPaths
-from PySide6.QtWidgets import QWidget, QFormLayout, QSpinBox, QComboBox, QCheckBox, QLineEdit, QLabel, QVBoxLayout, QPushButton, QFileDialog
+from PySide6.QtWidgets import QWidget, QFormLayout, QSpinBox, QComboBox, QCheckBox, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
 
 from ..windows import parse_hotkey
 
@@ -32,7 +32,7 @@ class SettingsPage(QWidget):
         self._text(form, "logo", "Default logo file (optional)", "")
         self._combo(form, "orientation", "PDF orientation", ["portrait", "landscape"])
         default = str(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)) / "SOP Capture Studio")
-        self._text(form, "location", "Default project directory", default)
+        self._text(form, "location", "Default project directory", default, browse=True)
         self._combo(form, "theme", "Appearance", ["Light", "Dark"])
         self.fields["theme"].currentTextChanged.connect(lambda text: on_theme(text == "Dark"))
         outer.addWidget(QLabel("Privacy: selected window only • local processing • explicit recording only.\nScreenshots may contain visible sensitive information. Review and redact before export."))
@@ -45,11 +45,27 @@ class SettingsPage(QWidget):
         if isinstance(widget, QComboBox): return widget.currentText()
         return widget.text()
 
-    def _text(self, form, name, label, default):
+    def _text(self, form, name, label, default, browse=False):
         widget = QLineEdit(str(self.settings.value(name, default)))
         widget.textChanged.connect(lambda value: self.settings.setValue(name, value))
         self.fields[name] = widget
-        form.addRow(label, widget)
+        if browse:
+            row = QWidget()
+            layout = QHBoxLayout(row)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(widget, 1)
+            choose = QPushButton("Browse…")
+            choose.setToolTip("Choose the default project folder in File Explorer")
+            choose.clicked.connect(self.browse_project_directory)
+            layout.addWidget(choose)
+            form.addRow(label, row)
+        else:
+            form.addRow(label, widget)
+
+    def browse_project_directory(self):
+        directory = QFileDialog.getExistingDirectory(self, "Choose default project directory", self.value("location"))
+        if directory:
+            self.fields["location"].setText(str(Path(directory)))
 
     def _spin(self, form, name, label, low, high, default):
         widget = QSpinBox()

@@ -78,8 +78,12 @@ def export_pdf(project, root, output, orientation=None):
     if not project.steps:
         content("Procedure", heading)
         content("No procedural steps have been added.")
+    previous_section = ""
     for number, step in enumerate(project.steps, 1):
         if settings["page_per_step"]: story.append(PageBreak())
+        if step.section and step.section != previous_section:
+            content(step.section, heading)
+        previous_section = step.section
         step_heading = para(f"{number:02d}  {step.title}", heading)
         image_item = None
         if step.image:

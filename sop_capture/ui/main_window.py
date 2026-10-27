@@ -267,11 +267,15 @@ class MainWindow(QMainWindow):
         export_row = QHBoxLayout()
         self.selected_template_label = QLabel("Template: Standard SOP")
         export_row.addWidget(self.selected_template_label, 1)
+        export_row.addWidget(button("Group steps...", self.group_steps_dialog))
+        export_row.addWidget(button("Review SOP", self.show_review))
+        export_row.addWidget(button("Rename section...", self.rename_section_dialog))
         export_row.addWidget(button("Choose template…", lambda: self.show_page(4)))
         export_row.addWidget(button("Export Word…", self.export_word_dialog))
         box.addLayout(export_row)
         splitter = QSplitter()
         self.steps_list = QListWidget()
+        self.steps_list.setMinimumWidth(210)
         self.steps_list.setIconSize(QSize(130, 72))
         self.steps_list.setWordWrap(True)
         self.steps_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
@@ -285,6 +289,11 @@ class MainWindow(QMainWindow):
         self.step_title.setPlaceholderText("Step title — what should the reader do?")
         self.step_title.textChanged.connect(self._step_fields_changed)
         right.addWidget(self.step_title)
+        self.step_section = QLineEdit()
+        self.step_section.setMaxLength(120)
+        self.step_section.setPlaceholderText("Section / stage (optional)")
+        self.step_section.textEdited.connect(self._step_fields_changed)
+        right.addWidget(self.step_section)
         self.step_description = QPlainTextEdit()
         self.step_description.setPlaceholderText("Instructions for this step…")
         self.step_description.setMaximumHeight(120)
@@ -294,7 +303,7 @@ class MainWindow(QMainWindow):
         self.tool_picker = QComboBox()
         for label, tool in (("Move click marker", "marker"), ("Edit annotations", "edit"), ("Arrow", "arrow"), ("Straight line", "line"),
                             ("Circle / ellipse", "circle"), ("Outline box", "highlight"), ("Translucent highlight", "highlighter"),
-                            ("Text label", "text"), ("Solid redaction", "redact"), ("Blur", "blur")):
+                            ("Text callout", "callout"), ("Text label", "text"), ("Solid redaction", "redact"), ("Blur", "blur")):
             self.tool_picker.addItem(label, tool)
         self.canvas = AnnotationCanvas()
         self.tool_picker.currentIndexChanged.connect(lambda: self.canvas.set_tool(self.tool_picker.currentData()))
@@ -644,12 +653,99 @@ class MainWindow(QMainWindow):
         self._template_status()
         self.notice("Template applied to this SOP. Preview the result before exporting.")
 
+    def step_list_label(self, index):
+        step = self.project.steps[index]
+        prefix = step.section+"\n" if step.section and (index == 0 or self.project.steps[index-1].section != step.section) else ""
+        return prefix+f"{index+1:02d}   {step.title}"
+
+    def group_steps(self, name, first, last):
+        name = name.strip()
+        if not self.project or not 0 <= first <= last < len(self.project.steps): return
+        if len(name) > 120 or "\n" in name or "\r" in name: raise ValueError("Invalid section name")
+        self.checkpoint()
+        selected = self.current_step()
+        for step in self.project.steps[first:last+1]: step.section = name
+        self._refresh_steps(selected.id if selected else None)
+        self.edited()
+
+    def rename_section(self, old, new):
+        new = new.strip()
+        if len(new) > 120 or "\n" in new or "\r" in new: raise ValueError("Invalid section name")
+        self.checkpoint()
+        for step in self.project.steps:
+            if step.section == old: step.section = new
+        self._refresh_steps()
+        self.edited()
+
+    def rename_section_dialog(self):
+        step = self.current_step()
+        if not step or not step.section or self.active or self.busy: return
+        name, accepted = QInputDialog.getText(self, "Rename section", "New name for all steps in this section:", text=step.section)
+        if accepted:
+            if len(name.strip()) > 120 or "\n" in name or "\r" in name:
+                self.notice("Section names must be one line, up to 120 characters.")
+                return
+            self.rename_section(step.section, name)
+
+    def group_steps_dialog(self):
+        if not self.project or not self.project.steps or self.active or self.busy: return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Group steps into a section")
+        layout = QFormLayout(dialog)
+        name = QLineEdit()
+        name.setMaxLength(120)
+        first, last = QSpinBox(), QSpinBox()
+        for widget in (first, last): widget.setRange(1, len(self.project.steps))
+        first.setValue(max(1, self.steps_list.currentRow()+1))
+        last.setValue(first.value())
+        first.valueChanged.connect(lambda value: last.setMinimum(value))
+        layout.addRow("Section name (blank removes grouping)", name)
+        layout.addRow("First step", first)
+        layout.addRow("Last step", last)
+        layout.addRow(button("Apply grouping", dialog.accept))
+        if dialog.exec() and first.value() <= last.value():
+            self.group_steps(name.text(), first.value()-1, last.value()-1)
+
+    def show_review(self, for_export=False):
+        if not self.project: return False
+        from ..review import review_project
+        issues = review_project(self.project, self.store.root)
+        if for_export and not issues: return True
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Review SOP before export")
+        dialog.resize(650, 400)
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel("Review flagged items. Screenshots may be omitted intentionally."))
+        items = QListWidget()
+        for issue in issues: items.addItem(issue.message)
+        if not issues: items.addItem("No missing details found.")
+        layout.addWidget(items)
+        def fix():
+            row = items.currentRow()
+            if not 0 <= row < len(issues): return
+            issue = issues[row]
+            if issue.step_id:
+                index = next((i for i, step in enumerate(self.project.steps) if step.id == issue.step_id), None)
+                if index is not None:
+                    self.show_page(1)
+                    self.steps_list.setCurrentRow(index)
+                    (self.step_description if issue.field == "description" else self.step_title).setFocus()
+            else:
+                self.show_page(4 if issue.field == "template" else 1 if issue.field == "steps" else 2)
+                widget = self.document_fields.get(issue.field)
+                if widget: widget.setFocus()
+            dialog.reject()
+        layout.addWidget(button("Fix selected item", fix))
+        if for_export: layout.addWidget(button("Export anyway", dialog.accept))
+        layout.addWidget(button("Back" if for_export else "Close", dialog.reject))
+        return bool(dialog.exec())
+
     def _refresh_steps(self, selected=None):
         previous = self.steps_list.currentRow()
         self.loading = True
         self.steps_list.clear()
         for index, step in enumerate(self.project.steps):
-            item = QListWidgetItem(f"{index+1:02d}   {step.title}")
+            item = QListWidgetItem(self.step_list_label(index))
             item.setData(Qt.ItemDataRole.UserRole, step.id)
             if step.image:
                 try:
@@ -669,13 +765,14 @@ class MainWindow(QMainWindow):
     def _refresh_list_labels(self):
         for index, step in enumerate(self.project.steps):
             item = self.steps_list.item(index)
-            if item: item.setText(f"{index+1:02d}   {step.title}")
+            if item: item.setText(self.step_list_label(index))
 
     def _select_step(self, index):
         if self.loading: return
         self.loading = True
         step = self.current_step()
         self.step_title.setText(step.title if step else "")
+        self.step_section.setText(step.section if step else "")
         self.step_description.setPlainText(step.description if step else "")
         self.step_notes.setText(step.notes if step else "")
         self.marker_check.setChecked(bool(step and step.marker_visible))
@@ -688,6 +785,7 @@ class MainWindow(QMainWindow):
         if self.loading or not step: return
         self.checkpoint()
         step.title = self.step_title.text()
+        step.section = self.step_section.text().strip()
         step.description = self.step_description.toPlainText()
         step.notes = self.step_notes.text()
         self.edited()
@@ -705,6 +803,7 @@ class MainWindow(QMainWindow):
         self.checkpoint()
         step = Step(title="New step")
         selected = self.current_step()
+        step.section = selected.section if selected else ""
         position = self.project.steps.index(selected)+1 if selected else len(self.project.steps)
         self.project.steps.insert(position, step)
         self._refresh_steps(step.id)
@@ -772,11 +871,11 @@ class MainWindow(QMainWindow):
         self.annotation_colour.setStyleSheet(f"background: {colour.name()}; color: {foreground};")
         kind = self.canvas.step.annotations[self.canvas.selected].kind if self.canvas.selected is not None else self.canvas.tool
         self.arrow_style_picker.setVisible(kind == "arrow")
-        self.annotation_colour.setEnabled(kind in {"arrow", "line", "circle", "highlight", "highlighter", "text"})
-        self.annotation_width.setEnabled(kind in {"arrow", "line", "circle", "highlight"})
-        self.annotation_font_size.setEnabled(kind == "text")
+        self.annotation_colour.setEnabled(kind in {"arrow", "line", "circle", "highlight", "highlighter", "text", "callout"})
+        self.annotation_width.setEnabled(kind in {"arrow", "line", "circle", "highlight", "callout"})
+        self.annotation_font_size.setEnabled(kind in {"text", "callout"})
         self.annotation_opacity.setEnabled(kind == "highlighter")
-        self.annotation_text.setVisible(kind == "text")
+        self.annotation_text.setVisible(kind in {"text", "callout"})
         self.styling = False
 
     def _annotation_style_changed(self, name, value):
@@ -1025,6 +1124,7 @@ class MainWindow(QMainWindow):
 
     def export_word_dialog(self):
         if not self.project or self.busy or self.active: return
+        if not self.show_review(for_export=True): return
         safe = re.sub(r'[^\w .-]', "_", self.project.title)[:100] or "Procedure"
         path, _ = QFileDialog.getSaveFileName(self, "Export editable Word document", str(self.store.root / "Exports" / f"{safe}.docx"), "Word document (*.docx)")
         if not path: return
@@ -1046,6 +1146,7 @@ class MainWindow(QMainWindow):
 
     def export_dialog(self):
         if not self.project or self.busy: return
+        if not self.show_review(for_export=True): return
         safe = re.sub(r'[^\w .-]', "_", self.project.title)[:100] or "Procedure"
         path, _ = QFileDialog.getSaveFileName(self, "Export procedure PDF", str(self.store.root / "Exports" / f"{safe}.pdf"), "PDF (*.pdf)")
         if not path: return  # QFileDialog confirms replacement of existing files.

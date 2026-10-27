@@ -6,6 +6,11 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QListWidget, QT
 
 
 TOPICS = {
+    "Callouts, sections and review": """<h1>Make longer procedures easier to follow</h1>
+<p><b>Text callout:</b> select Text callout in the annotation dropdown, enter the label, then drag from the button or field to the label position. Adjust colour, stroke and text size. Use Edit annotations to move the target handle or drag the label independently. A live preview appears while dragging.</p>
+<p><b>Sections:</b> enter a section name below a step title, or choose Group steps and select a first and last step. Rename section changes every step using that name. Blank names remove grouping. Section headings appear in the list and PDF/Word exports; step numbering stays continuous. New steps inherit the selected section.</p>
+<p><b>Review SOP:</b> check missing document details, instructions and screenshots. Select an item and choose Fix selected item to return to its editor. PDF and Word export show the checklist when issues exist; Export anyway allows intentional omissions in drafts.</p>""",
+
     "Getting started": """<h1>Create your first SOP</h1>
 <p>SOP Capture Studio turns screenshots of a process into an editable procedure and a PDF.</p>
 <ol>

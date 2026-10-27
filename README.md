@@ -136,3 +136,9 @@ AI/OCR, SharePoint publishing, approval workflows and centrally shared template 
 ## Third-party licences
 
 The project uses the repository's MIT licence. Dependencies retain their own licences, including PySide6/Qt (LGPL/GPL/commercial terms), Pillow and ReportLab. The bundled PDF font is Bitstream Vera distributed with ReportLab; the packaging configuration includes ReportLab's fonts and associated licence files. Preserve the dependency notices and assess your organisation's distribution obligations before corporate rollout. Nothing in the app requires an OpenAI account or service.
+
+### Callouts, sections and review
+
+- Choose **Text callout**, type a label, then drag from its target to the label position. Use **Edit annotations** to move either end; colour, stroke and text size are adjustable.
+- Enter a **Section / stage** on a step or use **Group steps...** for a range. **Rename section...** updates all matching steps. PDF and Word include section headings with continuous step numbering.
+- **Review SOP** flags missing document details, instructions and screenshots. Select an item to fix it. Export checks the draft and offers **Export anyway** for intentional omissions.

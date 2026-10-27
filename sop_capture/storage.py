@@ -74,8 +74,10 @@ class ProjectStore:
 
     def save(self, project):
         self.prepare()
+        if any(s.section or any(a.kind == "callout" for a in s.annotations) for s in project.steps):
+            project.schema_version = 3
         if project.template:
-            project.schema_version = 2  # Older applications must not silently discard the selected layout.
+            project.schema_version = max(project.schema_version, 2)  # Older applications must not silently discard the selected layout.
         # Validate before replacing the last usable project.
         Project.from_dict(project.to_dict())
         for step in project.steps:

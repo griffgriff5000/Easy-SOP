@@ -19,6 +19,20 @@ def render_step(root, step, number, style=None):
         return render_image(original, step, number, style)
 
 
+def callout_layout(annotation, size):
+    font = ImageFont.truetype(str(font_path(True)), annotation.font_size)
+    padding = 8
+    limit = max(1, min(size[0]-padding*2, max(160, size[0]*.45)))
+    lines = wrap_text(annotation.text or "Label", font, limit)
+    line_height = round(annotation.font_size*1.3)
+    lines = lines[:max(1, (size[1]-padding*2)//line_height)]
+    width = min(size[0], max(font.getlength(line) for line in lines)+padding*2)
+    height = min(size[1], len(lines)*line_height+padding*2)
+    left = max(0, min(size[0]-width, annotation.points[2]))
+    top = max(0, min(size[1]-height, annotation.points[3]))
+    return (left, top, left+width, top+height), lines, font
+
+
 def render_image(original, step, number, style=None):
     """One renderer for exports and non-mutating canvas previews."""
     image = original.convert("RGB").copy()
@@ -28,7 +42,18 @@ def render_image(original, step, number, style=None):
         box = (max(0, min(x1, x2)), max(0, min(y1, y2)), min(image.width, max(x1, x2)), min(image.height, max(y1, y2)))
         color = ImageColor.getrgb(annotation.color)
         width = max(1, min(30, annotation.width))
-        if annotation.kind == "circle":
+        if annotation.kind == "callout":
+            label, lines, font = callout_layout(annotation, image.size)
+            left, top, right, bottom = label
+            edge = (max(left, min(right, x1)), max(top, min(bottom, y1)))
+            draw.line([edge, (x1, y1)], fill=color, width=width)
+            angle = math.atan2(y1-edge[1], x1-edge[0])
+            length = max(12, width*4)
+            draw.polygon([(x1,y1), (x1-length*math.cos(angle-.5), y1-length*math.sin(angle-.5)), (x1-length*math.cos(angle+.5), y1-length*math.sin(angle+.5))], fill=color)
+            draw.rectangle(label, fill="white", outline=color, width=width)
+            for i, line in enumerate(lines):
+                draw.text((left+8, top+8+i*round(annotation.font_size*1.3)), line, font=font, fill=color)
+        elif annotation.kind == "circle":
             draw.ellipse(box, outline=color, width=width)
         elif annotation.kind == "highlight":
             draw.rectangle(box, outline=color, width=width)

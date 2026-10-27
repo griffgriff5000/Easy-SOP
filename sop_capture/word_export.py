@@ -192,9 +192,15 @@ def export_docx(project, root, output):
             if value:
                 paragraph(label, heading, True)
                 paragraph(value)
+    previous_section = ""
     for number, step in enumerate(project.steps, 1):
+        section_heading = None
+        if step.section and step.section != previous_section:
+            section_heading = paragraph(step.section, heading, True)
+        previous_section = step.section
         title = paragraph(f"{number:02d}  {step.title}", heading, True)
-        if settings["page_per_step"]: title.paragraph_format.page_break_before = True
+        if settings["page_per_step"]:
+            (section_heading if section_heading is not None else title).paragraph_format.page_break_before = True
         if step.image:
             try:
                 image = render_step(root, step, number, project)

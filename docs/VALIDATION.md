@@ -65,3 +65,9 @@ Before regular corporate use, run these checks on the intended Windows machine a
 ## Reference contracts
 
 Native hook lifetime follows [Microsoft's SetWindowsHookEx documentation](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw). Toolbar exclusion is best effort using [SetWindowDisplayAffinity](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity). Frozen child startup calls `multiprocessing.freeze_support()` as required by [PyInstaller's multiprocessing guidance](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html#multi-processing). These API contracts do not replace the application-specific checks listed above.
+
+## Callouts, sections and review (27 October 2026)
+
+Added tests for callout persistence, independent label/target editing and undo, redaction precedence, section range grouping/renaming, backward compatibility, PDF and Word section headings, page-per-step heading placement, checklist completeness, missing assets, navigation and cancellation before export. Synthetic callout/editor and checklist screenshots generated under `.superpowers/visual`. Offscreen Qt rendered UI fonts as missing glyphs in this environment; the Pillow callout label rendered correctly. Native Windows font appearance needs an interactive check.
+
+Final automated suite: **92 passed**. Independent review findings on section page breaks, callout pointer hit testing and clamped-label dragging were corrected.

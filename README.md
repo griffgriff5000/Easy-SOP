@@ -33,6 +33,8 @@ To adjust an existing arrow, circle, highlight or redaction, choose **Edit annot
 
 New tools include **Straight line**, **Translucent highlight** with adjustable opacity, and **Text label**. For labels, enter the text, choose a font size and drag a box; text wraps within that box. Enlarge the box or reduce the font size if the label is clipped. Controls are enabled for the tools they affect. Numbered click-marker styling remains on Document; solid redactions always stay opaque black.
 
+With **Arrow** selected, the **Arrow style** dropdown shows visual examples of solid, open-head and double-headed arrows. Choose an example before drawing, or select an existing arrow under Edit annotations to change its style.
+
 Choose a window on Capture before using **Retake selected window** in the editor. Retaking captures one image and clears that step's old marker/annotations; Undo restores them. **Replace screenshot** imports an image and also clears prior annotations. Original image files are preserved in both cases.
 
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.

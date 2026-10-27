@@ -54,7 +54,15 @@ def render_image(original, step, number, style=None):
             if annotation.kind == "line": continue
             angle = math.atan2(y2 - y1, x2 - x1)
             length = max(12, width * 4)
-            draw.polygon([(x2, y2), (x2-length*math.cos(angle-.5), y2-length*math.sin(angle-.5)), (x2-length*math.cos(angle+.5), y2-length*math.sin(angle+.5))], fill=color)
+            def head(x, y, direction):
+                first = (x-length*math.cos(direction-.5), y-length*math.sin(direction-.5))
+                last = (x-length*math.cos(direction+.5), y-length*math.sin(direction+.5))
+                if annotation.arrow_style == "open":
+                    draw.line([first, (x, y), last], fill=color, width=width)
+                else:
+                    draw.polygon([(x, y), first, last], fill=color)
+            head(x2, y2, angle)
+            if annotation.arrow_style == "double": head(x1, y1, angle+math.pi)
     if step.marker is not None and step.marker_visible:
         color = getattr(style, "marker_color", "#ef4444")
         radius = getattr(style, "marker_size", 24)

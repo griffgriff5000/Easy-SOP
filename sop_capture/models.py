@@ -18,6 +18,7 @@ class Annotation:
     text: str = ""
     font_size: int = 24
     opacity: int = 30
+    arrow_style: str = "solid"
 
 
 @dataclass
@@ -95,6 +96,8 @@ class Project:
                         raise ValueError("Invalid annotation opacity")
                     if not isinstance(a.text, str) or len(a.text) > 5000:
                         raise ValueError("Invalid annotation text")
+                    if a.arrow_style not in {"solid", "open", "double"}:
+                        raise ValueError("Invalid arrow style")
                 for name in ("title", "description", "notes", "timestamp"):
                     if not isinstance(getattr(step, name), str):
                         raise ValueError(f"Invalid step {name}")

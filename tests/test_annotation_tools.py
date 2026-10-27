@@ -151,3 +151,36 @@ def test_new_shape_does_not_cover_redaction(tmp_path):
     canvas.apply_gesture((20, 20), (250, 150))
     assert render_step(window.store.root, window.current_step(), 1).getpixel((100, 80)) == (0, 0, 0)
     window.close()
+
+
+def test_arrow_dropdown_sets_visible_style_and_persists(tmp_path):
+    app, window = make_editor(tmp_path)
+    window.tool_picker.setCurrentIndex(window.tool_picker.findData("arrow"))
+    picker = window.arrow_style_picker
+    assert picker.isVisible()
+    picker.setCurrentIndex(picker.findData("double"))
+    window.canvas.apply_gesture((40, 50), (300, 50))
+    assert window.current_step().annotations[0].arrow_style == "double"
+    window.flush_save()
+    assert window.store.load().steps[0].annotations[0].arrow_style == "double"
+    window.tool_picker.setCurrentIndex(window.tool_picker.findData("edit"))
+    window.canvas.apply_gesture((170, 50), (170, 50))
+    picker.setCurrentIndex(picker.findData("open"))
+    assert window.current_step().annotations[0].arrow_style == "open"
+    window.undo()
+    assert window.current_step().annotations[0].arrow_style == "double"
+    window.close()
+
+
+def test_double_arrow_has_a_second_head(tmp_path):
+    store = ProjectStore(tmp_path)
+    step = Step(annotations=[Annotation(kind="arrow", points=[10, 35, 110, 35], color="#0000ff", width=4, arrow_style="double")])
+    step.image = store.add_image(Image.new("RGB", (130, 70), "white"), step.id)
+    double = render_step(tmp_path, step, 1)
+    step.annotations[0].arrow_style = "solid"
+    solid = render_step(tmp_path, step, 1)
+    step.annotations[0].arrow_style = "open"
+    opened = render_step(tmp_path, step, 1)
+    assert double.getpixel((20, 30)) == (0, 0, 255)
+    assert solid.getpixel((20, 30)) == (255, 255, 255)
+    assert ImageChops.difference(solid, opened).getbbox() is not None

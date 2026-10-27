@@ -21,10 +21,10 @@ from PySide6.QtWidgets import (
 )
 
 from ..capture import CaptureSession, CaptureOptions
-from ..models import Project, Step
+from ..models import Project, Step, Annotation
 from ..storage import ProjectStore, atomic_bytes
 from ..pdf_export import export_pdf
-from ..imaging import render_step
+from ..imaging import render_step, render_image
 from ..windows import WindowsBackend, NativeInput, parse_hotkey
 from .canvas import AnnotationCanvas, image_pixmap
 from .settings import SettingsPage
@@ -275,6 +275,16 @@ class MainWindow(QMainWindow):
         tools.addWidget(self.marker_check)
         tools.addWidget(button("Remove marker", self.remove_marker))
         right.addLayout(tools)
+        self.arrow_style_picker = QComboBox()
+        self.arrow_style_picker.setIconSize(QSize(128, 36))
+        self.arrow_style_picker.setToolTip("Arrow style — choose the example you want to draw")
+        self.arrow_style_picker.setMaximumWidth(340)
+        for label, value in (("Solid arrow", "solid"), ("Open arrow", "open"), ("Double-headed arrow", "double")):
+            sample = Step(annotations=[Annotation(kind="arrow", points=[12, 18, 116, 18], width=3, color="#2563eb", arrow_style=value)])
+            icon = QIcon(image_pixmap(render_image(Image.new("RGB", (128, 36), "white"), sample, 1)))
+            self.arrow_style_picker.addItem(icon, label, value)
+        self.arrow_style_picker.currentIndexChanged.connect(lambda: self._annotation_style_changed("arrow_style", self.arrow_style_picker.currentData()))
+        right.addWidget(self.arrow_style_picker)
         styling = QHBoxLayout()
         self.annotation_colour = button("Colour…", self.choose_annotation_colour)
         styling.addWidget(self.annotation_colour)
@@ -691,12 +701,14 @@ class MainWindow(QMainWindow):
         self.annotation_width.setValue(style["width"])
         self.annotation_font_size.setValue(style["font_size"])
         self.annotation_opacity.setValue(style["opacity"])
+        self.arrow_style_picker.setCurrentIndex(self.arrow_style_picker.findData(style["arrow_style"]))
         if self.annotation_text.text() != style["text"]:
             self.annotation_text.setText(style["text"])
         colour = QColor(style["color"])
         foreground = "#122f44" if colour.lightness() > 135 else "white"
         self.annotation_colour.setStyleSheet(f"background: {colour.name()}; color: {foreground};")
         kind = self.canvas.step.annotations[self.canvas.selected].kind if self.canvas.selected is not None else self.canvas.tool
+        self.arrow_style_picker.setVisible(kind == "arrow")
         self.annotation_colour.setEnabled(kind in {"arrow", "line", "circle", "highlight", "highlighter", "text"})
         self.annotation_width.setEnabled(kind in {"arrow", "line", "circle", "highlight"})
         self.annotation_font_size.setEnabled(kind == "text")

@@ -36,6 +36,7 @@ class AnnotationCanvas(QWidget):
         self.draw_font_size = 24
         self.draw_opacity = 30
         self.draw_text = "Text label"
+        self.draw_arrow_style = "solid"
         self.style_project_id = None
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -99,8 +100,8 @@ class AnnotationCanvas(QWidget):
     def annotation_style(self):
         if self.selected is not None and self.step:
             a = self.step.annotations[self.selected]
-            return {"color": a.color, "width": a.width, "font_size": a.font_size, "opacity": a.opacity, "text": a.text}
-        return {"color": self.draw_color, "width": self.draw_width, "font_size": self.draw_font_size, "opacity": self.draw_opacity, "text": self.draw_text}
+            return {"color": a.color, "width": a.width, "font_size": a.font_size, "opacity": a.opacity, "text": a.text, "arrow_style": a.arrow_style}
+        return {"color": self.draw_color, "width": self.draw_width, "font_size": self.draw_font_size, "opacity": self.draw_opacity, "text": self.draw_text, "arrow_style": self.draw_arrow_style}
 
     def set_annotation_style(self, **values):
         style = self.annotation_style() | values
@@ -120,7 +121,7 @@ class AnnotationCanvas(QWidget):
 
     def new_annotation(self, start, end):
         return Annotation(kind=self.tool, points=[*start, *end], color=self.draw_color, width=self.draw_width,
-                          text=self.draw_text if self.tool == "text" else "", font_size=self.draw_font_size, opacity=self.draw_opacity)
+                          text=self.draw_text if self.tool == "text" else "", font_size=self.draw_font_size, opacity=self.draw_opacity, arrow_style=self.draw_arrow_style)
 
     def preview_image(self):
         if self.original is None or self.step is None: return None

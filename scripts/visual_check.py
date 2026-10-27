@@ -56,6 +56,10 @@ def main():
     window.grab().save(str(output / "ui-annotation-preview.png"))
     QTest.keyClick(window.canvas, Qt.Key.Key_Escape)
     QTest.mouseRelease(window.canvas, Qt.MouseButton.LeftButton, pos=position(940, 360))
+    window.arrow_style_picker.showPopup()
+    app.processEvents()
+    window.arrow_style_picker.view().window().grab().save(str(output / "ui-arrow-dropdown.png"))
+    window.arrow_style_picker.hidePopup()
     from sop_capture.ui.theme import stylesheet
     window.setStyleSheet(stylesheet(True))
     window.show_page(1)

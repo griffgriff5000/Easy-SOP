@@ -593,7 +593,9 @@ class MainWindow(QMainWindow):
         if not self.project or self.active or self.busy: return
         self.checkpoint()
         step = Step(title="New step")
-        self.project.steps.append(step)
+        selected = self.current_step()
+        position = self.project.steps.index(selected)+1 if selected else len(self.project.steps)
+        self.project.steps.insert(position, step)
         self._refresh_steps(step.id)
         self.edited()
 

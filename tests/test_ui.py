@@ -10,6 +10,23 @@ from sop_capture.storage import ProjectStore
 from sop_capture.ui.main_window import MainWindow
 
 
+@pytest.mark.parametrize("selected,expected", [(0, ["First", "New step", "Last"]), (-1, ["First", "Last", "New step"])])
+def test_add_step_after_selection_or_append(tmp_path, selected, expected):
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    store = ProjectStore(tmp_path)
+    window.set_project(Project(steps=[Step(title="First"), Step(title="Last")]), store)
+    window.steps_list.setCurrentRow(selected)
+    window.add_step()
+    assert [step.title for step in window.project.steps] == expected
+    assert window.current_step().title == "New step"
+    window.flush_save()
+    assert [step.title for step in store.load().steps] == expected
+    window.undo()
+    assert [step.title for step in window.project.steps] == ["First", "Last"]
+    window.close()
+
+
 def test_editor_roundtrip_undo_and_export(tmp_path):
     app = QApplication.instance() or QApplication([])
     window = MainWindow()

@@ -3,6 +3,9 @@ def stylesheet(dark=False):
     return f"""
     QWidget {{ font-family: 'Segoe UI'; font-size: 10pt; color: {text}; }}
     QMainWindow, QDialog {{ background: {bg}; }}
+    QMenuBar, QMenu {{ background: {panel}; color: {text}; }}
+    QMenuBar::item, QMenu::item {{ padding: 7px 16px; }}
+    QMenuBar::item:selected, QMenu::item:selected {{ background: #275473; color: white; }}
     QWidget#scrollPage {{ background: {bg}; }}
     QFrame#sidebar {{ background: #142e44; border-radius: 14px; }}
     QFrame#sidebar QLabel {{ color: #edf5fd; }}

@@ -18,6 +18,8 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 
 ## Workflow
 
+Open **Help → User guide** or press **F1** in the application for the built-in, offline guide. Topics cover the full workflow, annotations, saving/recovery, settings and troubleshooting. **Help → Keyboard shortcuts** lists shortcuts including your currently configured manual-capture key. The Help menu also provides Open logs and About.
+
 1. Select **New SOP**, enter a title and choose a project parent directory; or open an existing `project.json`.
 2. Refresh the application list, select the target window and use **Preview selection** to confirm its capture support.
 3. Enable Windows Do Not Disturb manually if required. The application links to notification settings and does not change them.

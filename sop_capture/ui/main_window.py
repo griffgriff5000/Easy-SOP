@@ -165,6 +165,30 @@ class MainWindow(QMainWindow):
             action.setShortcut(QKeySequence(shortcut))
             action.triggered.connect(callback)
             self.addAction(action)
+        help_menu = self.menuBar().addMenu("&Help")
+        self.help_action = QAction("User guide", self)
+        self.help_action.setShortcut(QKeySequence("F1"))
+        self.help_action.triggered.connect(lambda: self.show_help())
+        help_menu.addAction(self.help_action)
+        shortcuts = help_menu.addAction("Keyboard shortcuts")
+        shortcuts.triggered.connect(lambda: self.show_help("Keyboard shortcuts"))
+        help_menu.addSeparator()
+        help_menu.addAction("Open logs", self.open_logs)
+        help_menu.addSeparator()
+        help_menu.addAction("About SOP Capture Studio", self.show_about)
+
+    def show_help(self, topic="Getting started"):
+        from .help_dialog import UserGuideDialog
+        if not hasattr(self, "help_dialog"):
+            self.help_dialog = UserGuideDialog(self)
+        self.help_dialog.show_topic(topic, self.settings.value("shortcut"))
+        self.help_dialog.show()
+        self.help_dialog.raise_()
+        self.help_dialog.activateWindow()
+
+    def show_about(self):
+        from .. import __version__
+        QMessageBox.about(self, "About SOP Capture Studio", f"SOP Capture Studio {__version__}\n\nRecord a selected Windows application, edit illustrated steps and export a procedure PDF.\n\nLocal processing. No account or API key required.\n\nPress F1 for the user guide.")
 
     def _capture_page(self):
         page = QWidget()

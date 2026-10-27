@@ -60,6 +60,13 @@ def main():
     app.processEvents()
     window.arrow_style_picker.view().window().grab().save(str(output / "ui-arrow-dropdown.png"))
     window.arrow_style_picker.hidePopup()
+    window.show_help()
+    app.processEvents()
+    window.help_dialog.grab().save(str(output / "ui-help.png"))
+    window.help_dialog.show_topic("Annotations")
+    app.processEvents()
+    window.help_dialog.grab().save(str(output / "ui-help-annotations.png"))
+    window.help_dialog.close()
     from sop_capture.ui.theme import stylesheet
     window.setStyleSheet(stylesheet(True))
     window.show_page(1)

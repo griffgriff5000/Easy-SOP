@@ -6,7 +6,7 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 
 | Check | Result |
 | --- | --- |
-| Full automated suite | 64 passed, including preview/export matching, styling, new shapes, PDF preview/shutdown, annotation editing and duplication |
+| Full automated suite | 68 passed, including offline help, visual arrow styles, preview/export matching, styling, new shapes and editor workflows |
 | Domain and storage | Round-trip, immutable replacement images, reorder associations, recovery backup, path confinement, locking and schema validation passed |
 | Coordinates | Negative monitor origin, image scaling, outside clicks and invalid dimensions passed |
 | Output | Flattened redactions preserve originals, missing images, Unicode Latin text, long titles/descriptions and landscape PDF passed |
@@ -14,6 +14,7 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 | Qt editor | Field persistence, undo/redo, reorder/export, canvas redaction and horizontal arrow behavior passed |
 | Annotation editing / duplication | Independent duplicate steps, saved annotation movement, corner/arrow endpoint resizing, selected deletion, scaled Qt mouse drags, and reverse-drawn shape movement passed |
 | Live preview and new tools | Every tool's non-mutating drag preview matches its committed renderer; Escape cancellation, selected colour/stroke/font/opacity, text/line/translucent-highlight persistence, and PDF screenshot pixels passed |
+| Help menu | F1 opens the offline guide without an open project; topic navigation, dialog reuse and current configured shortcut text passed |
 | Real Windows native APIs | Window inventory, isolated synthetic-window rendering (716 × 469 pixels), low-level hook/global hotkey registration and cleanup passed |
 | Packaged rendering child | Synthetic target rendered successfully through the bundled executable's multiprocessing protocol |
 | Source application | Launch and timed close completed with exit code 0 |

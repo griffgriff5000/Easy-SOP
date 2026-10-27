@@ -67,3 +67,44 @@ def test_invalid_archive_rejected(tmp_path):
     file = tmp_path / "bad.docx"
     file.write_bytes(b"not a Word file")
     with pytest.raises(ValueError): inspect_docx(file)
+
+
+@pytest.mark.parametrize("pieces", [("INCLUDE", 'TEXT "C:\\private.txt"'), ("DDE", 'AUTO server topic')])
+def test_split_active_word_fields_are_rejected(tmp_path, pieces):
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    doc = Document()
+    p = doc.add_paragraph()
+    start = OxmlElement("w:fldChar")
+    start.set(qn("w:fldCharType"), "begin")
+    p.add_run()._r.append(start)
+    for piece in pieces:
+        instruction = OxmlElement("w:instrText")
+        instruction.text = piece
+        p.add_run()._r.append(instruction)
+    end = OxmlElement("w:fldChar")
+    end.set(qn("w:fldCharType"), "end")
+    p.add_run()._r.append(end)
+    path = tmp_path / "active.docx"
+    doc.save(path)
+    with pytest.raises(ValueError, match="fields"): inspect_docx(path)
+
+
+def test_header_logo_relationship_belongs_to_header(tmp_path):
+    from lxml import etree
+    doc = Document()
+    doc.sections[0].header.paragraphs[0].text = "{{logo}}"
+    doc.add_paragraph("{{steps}}")
+    source = tmp_path / "header.docx"
+    doc.save(source)
+    logo = tmp_path / "logo.png"
+    Image.new("RGB", (100, 50), "blue").save(logo)
+    library = TemplateLibrary(tmp_path / "library")
+    profile = library.save("Header", {}, source_docx=source, logo=logo)
+    project = Project(template=library.snapshot(profile["id"], tmp_path / "project"))
+    output = export_docx(project, tmp_path / "project", tmp_path / "with-logo.docx")
+    with zipfile.ZipFile(output) as archive:
+        header = etree.fromstring(archive.read("word/header1.xml"))
+        reference = header.xpath('//@r:embed', namespaces={'r':'http://schemas.openxmlformats.org/officeDocument/2006/relationships'})[0]
+        relationships = etree.fromstring(archive.read("word/_rels/header1.xml.rels"))
+        assert any(r.get("Id") == reference and r.get("Type").endswith("/image") for r in relationships)

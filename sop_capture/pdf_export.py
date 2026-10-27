@@ -32,7 +32,7 @@ def export_pdf(project, root, output, orientation=None):
     stream = BytesIO()
     margin = settings["margin_mm"]*mm
     doc = SimpleDocTemplate(stream, pagesize=page_size, leftMargin=margin, rightMargin=margin,
-                            topMargin=margin+2*mm, bottomMargin=margin, title=project.title, author=project.author)
+                            topMargin=max(margin+2*mm, 22*mm), bottomMargin=max(margin, 18*mm), title=project.title, author=project.author)
     styles = getSampleStyleSheet()
     regular = settings["font"]
     bold = {"Vera": "VeraBold", "Helvetica": "Helvetica-Bold", "Times-Roman": "Times-Bold", "Courier": "Courier-Bold"}[regular]
@@ -75,8 +75,8 @@ def export_pdf(project, root, output, orientation=None):
         if text or label != "Prerequisites":
             content(label, heading)
             content(text or "Not specified.")
-    content("Procedure", heading)
     if not project.steps:
+        content("Procedure", heading)
         content("No procedural steps have been added.")
     for number, step in enumerate(project.steps, 1):
         if settings["page_per_step"]: story.append(PageBreak())
@@ -92,7 +92,7 @@ def export_pdf(project, root, output, orientation=None):
                 image_item = PDFImage(data, width=width, height=height)
             except (OSError, ValueError):
                 image_item = para("Image unavailable — replace the screenshot in the editor.", small)
-        group = [step_heading]
+        group = ([para("Procedure", heading)] if number == 1 else []) + [step_heading]
         if image_item:
             group += [image_item, Spacer(1, 10)]
         if len(step.description) < 600:

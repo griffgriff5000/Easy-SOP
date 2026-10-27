@@ -84,6 +84,20 @@ TOPICS = {
 <p>If saving fails, keep the app open, check disk space/permissions and retry Ctrl+S. Closing during recording begins Stop; close again after it finishes.</p>
 <p>Processing is local, but OneDrive or another sync client may upload a project saved inside a synced folder. Choose a non-synced location if required.</p>
 """,
+    "Templates": """
+<h1>Choose or design a document template</h1>
+<p>Open <b>Templates</b> in the sidebar. The library contains Standard SOP, named custom PDF layouts and uploaded Word documents.</p>
+<h2>Create a custom layout</h2>
+<ol><li>Choose <b>New custom template</b> and enter a name.</li><li>Choose a logo, company default, fonts, sizes, colours, margins, screenshot width, cover and page-break preferences. Header/footer text can use {title}, {reference}, {version} and {company}.</li><li><b>Save changes</b> adds it to the list. Use <b>Save as new template</b> with a different name for a variant.</li><li>Open an SOP, select an entry and choose <b>Apply selected template to SOP</b> or <b>Apply and preview PDF</b>.</li></ol>
+<p>An SOP's existing company text takes priority over the template default. Template orientation overrides Document unless set to project. Header/footer space is reserved even with small margins.</p>
+<h2>Upload a company Word template</h2>
+<p>Choose <b>Upload Word template</b>, select a .docx file and give it a name. Map its detected paragraph styles to step titles, instructions and captions, then save and apply it. Company fonts need to be installed on the exporting PC.</p>
+<p>Prepare the document in Word with placeholders such as {{title}}, {{company}}, {{reference}}, {{version}}, {{author}}, {{purpose}}, {{scope}} and {{revision_history}}. Put <b>{{steps}}</b> alone in a body paragraph for repeating steps. Put <b>{{logo}}</b> alone in a paragraph for a logo override.</p>
+<p><b>Save example Word template</b> provides a ready-to-edit starting document. If an upload has no steps placeholder, import explains that generated content will be appended. The app does not automatically understand an arbitrary company form.</p>
+<p><b>Export Word</b> on Step editor saves DOCX. Word-template PDF preview/export requires installed desktop Microsoft Word. Standard/custom PDFs work without Word.</p>
+<h2>Existing SOPs keep their layout</h2>
+<p>Applying copies the template and assets into the SOP folder. Library edits/deletion do not change it. Apply again to use a newer version, or apply Standard SOP to return to the built-in layout.</p>
+""",
     "Settings": """
 <h1>Adjust the application</h1>
 <ul><li><b>Capture:</b> screenshot delay, click timing, mouse buttons, manual shortcut, lossless PNG compression and initial screenshot.</li>

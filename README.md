@@ -41,6 +41,33 @@ Choose a window on Capture before using **Retake selected window** in the editor
 
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.
 
+## Template library and company documents
+
+Open **Templates** to choose **Standard SOP**, a named custom layout, or an uploaded Word template. Select an entry and choose **Apply selected template to SOP**. Step editor shows the current template; PDF preview/export use that selection.
+
+**New custom template** starts from Standard SOP. Set a name, logo, company default, font preset, text sizes, colours, margins/orientation, cover, screenshot width and page-per-step preference. Header/footer text supports `{title}`, `{reference}`, `{version}` and `{company}`. Save changes adds it to the list; Save as new with a different name creates a variant. Existing SOP company text takes priority over the template default. Small margins still reserve header/footer space.
+
+**Upload Word template** keeps a `.docx` document's styles, tables, page layout, logos, headers and footers. Map its detected paragraph styles to generated step titles, instructions and captions. Fonts need to be installed on the exporting PC; the app cannot infer intended style mappings or reproduce unavailable fonts exactly.
+
+Prepare the document once using these placeholders:
+
+| Field | Content |
+| --- | --- |
+| `{{title}}` or `{{sop_title}}` | SOP title |
+| `{{company}}`, `{{reference}}`, `{{version}}`, `{{author}}` | Document information |
+| `{{reviewer}}`, `{{approver}}`, `{{status}}`, `{{created}}`, `{{updated}}` | Review/status and date fields |
+| `{{purpose}}`, `{{scope}}`, `{{prerequisites}}`, `{{revision_history}}` | Procedure context |
+| `{{steps}}` | Repeated titles, annotated screenshots, instructions and notes |
+| `{{logo}}` | Optional logo override |
+
+Put `{{steps}}` **once, alone in a body paragraph outside tables/headers**. Put `{{logo}}` alone in its own paragraph. Other text placeholders work in ordinary paragraphs, tables and headers/footers, including placeholders Word splits across text runs. Without a steps anchor, import explicitly offers to append generated SOP content. No automatic mapping of arbitrary company forms is claimed. Macro documents, embedded active objects, externally linked assets and active/external Word fields are unsupported. Ordinary hyperlinks are retained. Imported originals are not modified.
+
+**Save example Word template** creates a prepared file to edit. **Export Word** on Step editor saves DOCX. **Word-template PDF preview/export requires installed desktop Microsoft Word**; Standard/custom PDF export works independently. Both formats use flattened, current redactions. Imported Word documents keep their own page design; custom PDF appearance controls do not restyle them.
+
+The library is stored in local user application data. Applying copies a snapshot and assets into the project's `Templates/` folder: later library edits/deletion do not change an existing SOP, and moving the complete folder retains its layout. Apply again to adopt a newer library version. Existing projects without a selection use Standard SOP. Reopen updated projects with the updated app. Deleted library entries may retain their old assets to protect other open editors.
+
+Projects saved with a template use schema version 2, preventing older app versions from silently discarding the selected layout. Version-1 projects still open in this app; a previous valid project file is retained as backup when saved.
+
 ## Privacy and capture limitations
 
 - Only explicitly started sessions collect click events. Live screenshots use window-only Win32 rendering; **there is no desktop capture fallback**. Own-process windows are excluded from selection, and a target must retain its HWND and process ID.
@@ -84,8 +111,10 @@ Open `demo\Permit Management\project.json`. Its fictional screenshots contain no
 & "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" scripts/smoke_windows.py
 & "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" scripts/smoke_windows.py --renderer-executable dist/SOPCaptureStudio/SOPCaptureStudio.exe
 & "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" scripts/visual_check.py
+& "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" scripts/verify_templates.py
 & "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" -m PyInstaller --noconfirm SOPCaptureStudio.spec
 .\dist\SOPCaptureStudio\SOPCaptureStudio.exe --smoke-test
+& "$env:USERPROFILE\.venvs\easy-sop\Scripts\python.exe" scripts/smoke_template_bundle.py dist/SOPCaptureStudio/SOPCaptureStudio.exe
 ```
 
 The native smoke script creates a separate, synthetic target and checks inventory, window rendering, hook/hotkey registration and release. It does not inject input or inspect existing applications. Focus restrictions may prevent its manual-session check; it reports this rather than claiming success. `visual_check.py` saves application screenshots and PDF page renders in `.superpowers/visual` for inspection. The executable is unsigned; corporate deployment/code signing is outside this local build.
@@ -98,10 +127,11 @@ The native smoke script creates a separate, synthetic target and checks inventor
 - `windows.py`: Win32 window inventory, isolated rendering process, low-level mouse hook and global hotkey.
 - `capture.py`: bounded capture queue, focus checks, delay and session lifecycle.
 - `imaging.py`, `pdf_export.py`: shared flattened annotations and PDF layout.
+- `templates.py`, `word_export.py`, `document_export.py`: template library, portable snapshots, Word generation and export dispatch.
 - `ui/`: Qt capture dashboard, step editor, annotation canvas, document fields and settings.
 - `app.py`, `run_studio.py`: startup, DPI setup, rotating logs and multiprocessing-safe entry points.
 
-AI/OCR, Word export, SharePoint publishing, approval workflows and shared template libraries are future extensions. See the approved [design](docs/superpowers/specs/2026-10-23-sop-capture-studio-design.md) for the architectural boundaries.
+AI/OCR, SharePoint publishing, approval workflows and centrally shared template libraries are future extensions. See the approved [design](docs/superpowers/specs/2026-10-23-sop-capture-studio-design.md) for the architectural boundaries.
 
 ## Third-party licences
 

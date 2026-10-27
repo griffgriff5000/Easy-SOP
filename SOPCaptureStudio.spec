@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('reportlab', includes=['fonts/*'])
 a = Analysis(['run_studio.py'], pathex=[], binaries=[], datas=datas,
-             hiddenimports=['PySide6.QtPdf', 'PySide6.QtPdfWidgets'],
+             hiddenimports=['PySide6.QtPdf', 'PySide6.QtPdfWidgets', 'win32com.client', 'win32timezone'],
              hookspath=[], hooksconfig={}, runtime_hooks=[],
              excludes=['PySide6.QtWebEngineCore', 'PySide6.QtWebEngineWidgets', 'PySide6.QtQml', 'PySide6.QtQuick'],
              noarchive=False)

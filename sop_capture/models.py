@@ -68,7 +68,7 @@ class Project:
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or data.get("schema_version") != 1:
+        if not isinstance(data, dict) or data.get("schema_version") not in (1, 2):
             raise ValueError("Unsupported project schema version")
         try:
             project = cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)} and k != "steps"})

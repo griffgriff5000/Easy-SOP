@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 from ..capture import CaptureSession, CaptureOptions
 from ..models import Project, Step, Annotation
 from ..storage import ProjectStore, atomic_bytes
-from ..pdf_export import export_pdf
+from ..document_export import export_pdf
 from ..imaging import render_step, render_image
 from ..windows import WindowsBackend, NativeInput, parse_hotkey
 from .canvas import AnnotationCanvas, image_pixmap
@@ -69,12 +69,13 @@ def scroll(widget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, template_library=None):
         super().__init__()
         self.setWindowTitle("SOP Capture Studio")
         self.resize(1320, 900)
         self.setMinimumSize(1000, 700)
         self.project = self.store = self.target = None
+        self.template_library = template_library
         self.session = self.native_input = None
         self.history, self.future = [], []
         self.loading = False
@@ -121,7 +122,7 @@ class MainWindow(QMainWindow):
         self.pages = QStackedWidget()
         self.nav_group = QButtonGroup(self)
         self.nav_buttons = []
-        for index, text in enumerate(("01   Capture", "02   Step editor", "03   Document", "04   Settings")):
+        for index, text in enumerate(("01   Capture", "02   Step editor", "03   Document", "04   Settings", "05   Templates")):
             nav = button(text, lambda checked=False, i=index: self.show_page(i))
             nav.setCheckable(True)
             self.nav_group.addButton(nav)
@@ -138,6 +139,12 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self._document_page())
         self.settings = SettingsPage(lambda dark: self.setStyleSheet(stylesheet(dark)))
         self.pages.addWidget(scroll(self.settings))
+        from ..templates import TemplateLibrary
+        from .templates_page import TemplatesPage
+        if self.template_library is None:
+            self.template_library = TemplateLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)) / "templates")
+        self.templates_page = TemplatesPage(self.template_library, self.apply_template, self.preview_pdf)
+        self.pages.addWidget(self.templates_page)
         layout.addWidget(sidebar)
         layout.addWidget(self.pages, 1)
         self.setCentralWidget(root)
@@ -257,6 +264,12 @@ class MainWindow(QMainWindow):
         actions.addWidget(self.preview_pdf_button)
         actions.addWidget(self.export_button)
         box.addLayout(actions)
+        export_row = QHBoxLayout()
+        self.selected_template_label = QLabel("Template: Standard SOP")
+        export_row.addWidget(self.selected_template_label, 1)
+        export_row.addWidget(button("Choose template…", lambda: self.show_page(4)))
+        export_row.addWidget(button("Export Word…", self.export_word_dialog))
+        box.addLayout(export_row)
         splitter = QSplitter()
         self.steps_list = QListWidget()
         self.steps_list.setIconSize(QSize(130, 72))
@@ -469,6 +482,9 @@ class MainWindow(QMainWindow):
         self.pages.widget(1).setEnabled(ready)
         self.pages.widget(2).setEnabled(ready)
         self.pages.widget(3).setEnabled(not self.active and not self.busy)
+        self.pages.widget(4).setEnabled(not self.active and not self.busy)
+        self.templates_page.apply_button.setEnabled(ready)
+        self.templates_page.preview_button.setEnabled(ready)
         self.screenshots_button.setEnabled(self.store is not None)
         self.editor_panel.setEnabled(ready and self.current_step() is not None)
 
@@ -592,6 +608,7 @@ class MainWindow(QMainWindow):
         return self.project.steps[index] if 0 <= index < len(self.project.steps) else None
 
     def _refresh_project(self):
+        self._template_status()
         self.loading = True
         for name, widget in self.document_fields.items():
             value = getattr(self.project, name)
@@ -604,6 +621,28 @@ class MainWindow(QMainWindow):
         self.logo_label.setText(self.project.logo or "No logo")
         self.loading = False
         self._refresh_steps()
+
+    def _template_status(self):
+        name = self.project.template.get("name", "Standard SOP") if self.project else "Standard SOP"
+        self.selected_template_label.setText("Template: "+name)
+        self.templates_page.active_label.setText("Current SOP template: "+name+". Apply a library template to change it; saved SOPs keep their own snapshot.")
+
+    def apply_template(self, identity):
+        if not self.project or self.active or self.busy: raise ValueError("Open an SOP and finish the current operation first")
+        snapshot = self.template_library.snapshot(identity, self.store.root)
+        previous = self.project.template
+        history, future = list(self.history), list(self.future)
+        self.checkpoint()
+        self.project.template = snapshot
+        try:
+            self.flush_save()
+        except Exception:
+            self.project.template = previous
+            self.history, self.future = history, future
+            self._template_status()
+            raise
+        self._template_status()
+        self.notice("Template applied to this SOP. Preview the result before exporting.")
 
     def _refresh_steps(self, selected=None):
         previous = self.steps_list.currentRow()
@@ -983,6 +1022,27 @@ class MainWindow(QMainWindow):
         if not self.project: raise ValueError("Open a project first")
         self.flush_save()
         return export_pdf(self.project, self.store.root, path)
+
+    def export_word_dialog(self):
+        if not self.project or self.busy or self.active: return
+        safe = re.sub(r'[^\w .-]', "_", self.project.title)[:100] or "Procedure"
+        path, _ = QFileDialog.getSaveFileName(self, "Export editable Word document", str(self.store.root / "Exports" / f"{safe}.docx"), "Word document (*.docx)")
+        if not path: return
+        chosen = Path(path)
+        output = chosen.with_suffix(".docx")
+        if output != chosen and output.exists() and QMessageBox.question(self, "Replace Word document?", f"{output.name} already exists. Replace it?") != QMessageBox.StandardButton.Yes: return
+        try: self.flush_save()
+        except Exception as exc:
+            self.fail(exc)
+            return
+        project, root = deepcopy(self.project), self.store.root
+        from ..word_export import export_docx
+        def finished(value, error):
+            if error: self.fail(error)
+            else:
+                self.notice(f"Word document exported: {value}")
+                QDesktopServices.openUrl(QUrl.fromLocalFile(str(value.parent)))
+        self.run_task(lambda: export_docx(project, root, output), finished)
 
     def export_dialog(self):
         if not self.project or self.busy: return

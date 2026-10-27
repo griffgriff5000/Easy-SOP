@@ -74,6 +74,8 @@ class ProjectStore:
 
     def save(self, project):
         self.prepare()
+        if project.template:
+            project.schema_version = 2  # Older applications must not silently discard the selected layout.
         # Validate before replacing the last usable project.
         Project.from_dict(project.to_dict())
         for step in project.steps:

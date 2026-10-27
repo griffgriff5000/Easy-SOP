@@ -15,6 +15,9 @@ class Annotation:
     points: list[float] = field(default_factory=list)
     color: str = "#ef4444"
     width: int = 4
+    text: str = ""
+    font_size: int = 24
+    opacity: int = 30
 
 
 @dataclass
@@ -79,13 +82,19 @@ class Project:
                     step.marker = tuple(step.marker)
                 step.annotations = [Annotation(**a) for a in row.get("annotations", [])]
                 for a in step.annotations:
-                    if a.kind not in {"arrow", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
+                    if a.kind not in {"arrow", "line", "text", "highlighter", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
                         raise ValueError("Invalid annotation")
                     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in a.points):
                         raise ValueError("Invalid annotation coordinates")
                     ImageColor.getrgb(a.color)
                     if not isinstance(a.width, int) or not 1 <= a.width <= 30:
                         raise ValueError("Invalid annotation width")
+                    if not isinstance(a.font_size, int) or not 8 <= a.font_size <= 144:
+                        raise ValueError("Invalid annotation text size")
+                    if not isinstance(a.opacity, int) or not 0 <= a.opacity <= 100:
+                        raise ValueError("Invalid annotation opacity")
+                    if not isinstance(a.text, str) or len(a.text) > 5000:
+                        raise ValueError("Invalid annotation text")
                 for name in ("title", "description", "notes", "timestamp"):
                     if not isinstance(getattr(step, name), str):
                         raise ValueError(f"Invalid step {name}")

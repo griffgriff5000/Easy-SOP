@@ -29,6 +29,10 @@ To reuse a screenshot for another instruction, select its step and choose **Dupl
 
 To adjust an existing arrow, circle, highlight or redaction, choose **Edit annotations** from the tool list. Drag the shape's body to move it, or drag a square handle to resize it/change an arrow endpoint. Choose **Delete selected** to remove the selected shape. Moves, resizing, deletion and duplication all support Undo/Redo and autosave. Moving a redaction can reveal previously covered content; review the result before exporting.
 
+**Live preview and styling:** choose a tool, set its colour and stroke thickness, then drag on the screenshot. You see the actual annotation before releasing to place it; press **Esc** to cancel. Select an existing annotation with **Edit annotations** to change its settings. With nothing selected, settings apply to new shapes. Stroke and text sizes are measured in original screenshot pixels; resize handles change the shape's overall dimensions.
+
+New tools include **Straight line**, **Translucent highlight** with adjustable opacity, and **Text label**. For labels, enter the text, choose a font size and drag a box; text wraps within that box. Enlarge the box or reduce the font size if the label is clipped. Controls are enabled for the tools they affect. Numbered click-marker styling remains on Document; solid redactions always stay opaque black.
+
 Choose a window on Capture before using **Retake selected window** in the editor. Retaking captures one image and clears that step's old marker/annotations; Undo restores them. **Replace screenshot** imports an image and also clears prior annotations. Original image files are preserved in both cases.
 
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.

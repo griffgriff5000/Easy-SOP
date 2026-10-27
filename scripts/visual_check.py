@@ -37,6 +37,25 @@ def main():
     window.canvas.apply_gesture((400, 530), (400, 530))
     app.processEvents()
     window.grab().save(str(output / "ui-annotation-edit.png"))
+    from sop_capture.models import Annotation
+    from PySide6.QtCore import QPoint
+    from PySide6.QtTest import QTest
+    window.current_step().annotations.extend([
+        Annotation(kind="highlighter", points=[285, 335, 900, 375], color="#ffdd00", opacity=35),
+        Annotation(kind="text", points=[600, 205, 1150, 270], color="#087f8c", text="Check the permit details", font_size=32),
+    ])
+    window.canvas.refresh()
+    window.tool_picker.setCurrentIndex(window.tool_picker.findData("arrow"))
+    window.canvas.set_annotation_style(color="#2563eb", width=9)
+    rect = window.canvas.image_rect()
+    def position(x, y):
+        return QPoint(round(rect.x()+x*rect.width()/1280), round(rect.y()+y*rect.height()/780))
+    QTest.mousePress(window.canvas, Qt.MouseButton.LeftButton, pos=position(1100, 420))
+    QTest.mouseMove(window.canvas, position(940, 360))
+    app.processEvents()
+    window.grab().save(str(output / "ui-annotation-preview.png"))
+    QTest.keyClick(window.canvas, Qt.Key.Key_Escape)
+    QTest.mouseRelease(window.canvas, Qt.MouseButton.LeftButton, pos=position(940, 360))
     from sop_capture.ui.theme import stylesheet
     window.setStyleSheet(stylesheet(True))
     window.show_page(1)

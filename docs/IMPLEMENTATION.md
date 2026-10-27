@@ -37,3 +37,9 @@ The packaged rendering check uses the same frozen child command protocol and mod
 Added Edit annotations: drag existing shapes to reposition them, drag handles to resize areas or change arrow endpoints, and delete the selected annotation. Image-coordinate transforms keep behavior consistent at scaled preview sizes; selection overlays are UI-only. Added Duplicate step, which deep-copies metadata and annotations under a fresh ID while sharing its immutable original PNG. Both features use existing undo/redo and autosave paths.
 
 An independent review identified signed-dimension checks rejecting movement of reverse-drawn area shapes. Four failing parameterized tests reproduced it; absolute dimension checks fixed it. Final feature suite: 42 passed, including an actual Qt mouse-drag test. Visual QA now uses temporary copies of the demo and memory-backed PDF input, leaving the distributed example unchanged.
+
+## Live preview, styles and new tools — 27 October
+
+Added actual rendered previews during drag for all tools and existing-shape edits, with Escape cancellation. A shared in-memory renderer supplies preview, editor and export, and QImage conversion avoids PNG compression on every pointer movement. Drawing uses current colour/stroke/font/opacity/text settings; selected annotations can be restyled through the toolbar with undo/autosave.
+
+Added straight lines, wrapped text labels and translucent rectangular highlights. Legacy annotation data loads with validated defaults for new fields. Redactions remain opaque and are composited last. Numbered marker style stays on Document. Independent review found no important bugs; visual review and a 4K rendering responsiveness sample were completed. Feature suite: 64 passing tests, including preview/commit equivalence for every tool and actual PDF screenshot pixels.

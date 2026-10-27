@@ -6,13 +6,14 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 
 | Check | Result |
 | --- | --- |
-| Full automated suite | 42 passed, including PDF preview/shutdown, bounded-queue coverage, annotation editing and duplication |
+| Full automated suite | 64 passed, including preview/export matching, styling, new shapes, PDF preview/shutdown, annotation editing and duplication |
 | Domain and storage | Round-trip, immutable replacement images, reorder associations, recovery backup, path confinement, locking and schema validation passed |
 | Coordinates | Negative monitor origin, image scaling, outside clicks and invalid dimensions passed |
 | Output | Flattened redactions preserve originals, missing images, Unicode Latin text, long titles/descriptions and landscape PDF passed |
 | Capture orchestration | Delayed focus rejection, stop draining, pause invalidation, pre-click frames, cache acquisition crossing pause/resume, stale/foreign input and newer-than-event frame rejection passed |
 | Qt editor | Field persistence, undo/redo, reorder/export, canvas redaction and horizontal arrow behavior passed |
 | Annotation editing / duplication | Independent duplicate steps, saved annotation movement, corner/arrow endpoint resizing, selected deletion, scaled Qt mouse drags, and reverse-drawn shape movement passed |
+| Live preview and new tools | Every tool's non-mutating drag preview matches its committed renderer; Escape cancellation, selected colour/stroke/font/opacity, text/line/translucent-highlight persistence, and PDF screenshot pixels passed |
 | Real Windows native APIs | Window inventory, isolated synthetic-window rendering (716 × 469 pixels), low-level hook/global hotkey registration and cleanup passed |
 | Packaged rendering child | Synthetic target rendered successfully through the bundled executable's multiprocessing protocol |
 | Source application | Launch and timed close completed with exit code 0 |
@@ -24,6 +25,8 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 The independent source reviewer found four important issues; all were reproduced by new failing tests, fixed, and followed by a passing full suite. Details are in [IMPLEMENTATION.md](IMPLEMENTATION.md).
 
 The subsequent annotation-editing feature received an independent review. One movement issue affecting reverse-drawn shapes was reproduced for circles, highlights, solid redactions and blur regions, then fixed. The editor's selection handles and updated toolbar were visually inspected. Source and executable were rebuilt after the feature changes.
+
+On 27 October, live previews and per-annotation styling received another independent source review with no important findings. The updated toolbar and an active blue-arrow preview alongside a text label and translucent highlight were visually inspected. A local synthetic 3840 × 2160 renderer check averaged 71 ms/frame for a text label, arrow and translucent highlight; that measures image rendering, not complete UI frame rate. Pixel previews and exports use the same renderer. Existing annotation records receive defaults for the newly added style fields; projects saved by the updated app should be opened with this version rather than an older executable.
 
 ## Limits of this verification
 

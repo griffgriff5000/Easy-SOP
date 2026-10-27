@@ -11,13 +11,13 @@ import uuid
 
 from PIL import Image, ImageColor
 from PySide6.QtCore import QObject, Signal, Qt, QTimer, QSize, QUrl, QStandardPaths, QBuffer, QIODevice
-from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
+from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence, QColor
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QListWidget, QListWidgetItem, QStackedWidget, QFrame, QFileDialog,
     QMessageBox, QInputDialog, QLineEdit, QPlainTextEdit, QFormLayout,
     QScrollArea, QSplitter, QComboBox, QCheckBox, QDialog, QAbstractItemView,
-    QButtonGroup, QSpinBox,
+    QButtonGroup, QSpinBox, QColorDialog,
 )
 
 from ..capture import CaptureSession, CaptureOptions
@@ -78,6 +78,7 @@ class MainWindow(QMainWindow):
         self.session = self.native_input = None
         self.history, self.future = [], []
         self.loading = False
+        self.styling = False
         self.busy = False
         self.last_tick = time.monotonic()
         self.elapsed = 0.0
@@ -254,7 +255,9 @@ class MainWindow(QMainWindow):
         right.addWidget(self.step_description)
         tools = QHBoxLayout()
         self.tool_picker = QComboBox()
-        for label, tool in (("Move click marker", "marker"), ("Edit annotations", "edit"), ("Arrow", "arrow"), ("Circle", "circle"), ("Highlight box", "highlight"), ("Solid redaction", "redact"), ("Blur", "blur")):
+        for label, tool in (("Move click marker", "marker"), ("Edit annotations", "edit"), ("Arrow", "arrow"), ("Straight line", "line"),
+                            ("Circle / ellipse", "circle"), ("Outline box", "highlight"), ("Translucent highlight", "highlighter"),
+                            ("Text label", "text"), ("Solid redaction", "redact"), ("Blur", "blur")):
             self.tool_picker.addItem(label, tool)
         self.canvas = AnnotationCanvas()
         self.tool_picker.currentIndexChanged.connect(lambda: self.canvas.set_tool(self.tool_picker.currentData()))
@@ -272,6 +275,41 @@ class MainWindow(QMainWindow):
         tools.addWidget(self.marker_check)
         tools.addWidget(button("Remove marker", self.remove_marker))
         right.addLayout(tools)
+        styling = QHBoxLayout()
+        self.annotation_colour = button("Colour…", self.choose_annotation_colour)
+        styling.addWidget(self.annotation_colour)
+        self.annotation_width = QSpinBox()
+        self.annotation_width.setRange(1, 30)
+        self.annotation_width.setSuffix(" px")
+        self.annotation_width.setToolTip("Line thickness in screenshot pixels")
+        styling.addWidget(QLabel("Stroke"))
+        styling.addWidget(self.annotation_width)
+        self.annotation_font_size = QSpinBox()
+        self.annotation_font_size.setRange(8, 144)
+        self.annotation_font_size.setSuffix(" px")
+        styling.addWidget(QLabel("Text size"))
+        styling.addWidget(self.annotation_font_size)
+        self.annotation_opacity = QSpinBox()
+        self.annotation_opacity.setRange(0, 100)
+        self.annotation_opacity.setSuffix(" %")
+        styling.addWidget(QLabel("Highlight opacity"))
+        styling.addWidget(self.annotation_opacity)
+        styling.addStretch()
+        right.addLayout(styling)
+        self.annotation_text = QLineEdit("Text label")
+        self.annotation_text.setMaxLength(5000)
+        self.annotation_text.setPlaceholderText("Type your label, then drag a box on the screenshot")
+        self.annotation_text.setToolTip("Text wraps inside the box. Resize the box or reduce text size if it is clipped.")
+        right.addWidget(self.annotation_text)
+        for widget, name in ((self.annotation_width, "width"), (self.annotation_font_size, "font_size"), (self.annotation_opacity, "opacity")):
+            widget.valueChanged.connect(lambda value, key=name: self._annotation_style_changed(key, value))
+        self.annotation_text.textChanged.connect(lambda value: self._annotation_style_changed("text", value))
+        self.canvas.style_changed.connect(self._sync_annotation_controls)
+        self._sync_annotation_controls()
+        preview_help = QLabel("Drag to preview · Release to place · Esc to cancel · Edit annotations to change existing shapes")
+        preview_help.setWordWrap(True)
+        preview_help.setObjectName("subheading")
+        right.addWidget(preview_help)
         right.addWidget(self.canvas, 1)
         files = QHBoxLayout()
         files.addWidget(button("Replace screenshot…", self.replace_image))
@@ -646,6 +684,34 @@ class MainWindow(QMainWindow):
         step.marker_visible = checked
         self.canvas.refresh()
         self.edited()
+
+    def _sync_annotation_controls(self):
+        style = self.canvas.annotation_style()
+        self.styling = True
+        self.annotation_width.setValue(style["width"])
+        self.annotation_font_size.setValue(style["font_size"])
+        self.annotation_opacity.setValue(style["opacity"])
+        if self.annotation_text.text() != style["text"]:
+            self.annotation_text.setText(style["text"])
+        colour = QColor(style["color"])
+        foreground = "#122f44" if colour.lightness() > 135 else "white"
+        self.annotation_colour.setStyleSheet(f"background: {colour.name()}; color: {foreground};")
+        kind = self.canvas.step.annotations[self.canvas.selected].kind if self.canvas.selected is not None else self.canvas.tool
+        self.annotation_colour.setEnabled(kind in {"arrow", "line", "circle", "highlight", "highlighter", "text"})
+        self.annotation_width.setEnabled(kind in {"arrow", "line", "circle", "highlight"})
+        self.annotation_font_size.setEnabled(kind == "text")
+        self.annotation_opacity.setEnabled(kind == "highlighter")
+        self.annotation_text.setVisible(kind == "text")
+        self.styling = False
+
+    def _annotation_style_changed(self, name, value):
+        if not self.styling:
+            self.canvas.set_annotation_style(**{name: value})
+
+    def choose_annotation_colour(self):
+        colour = QColorDialog.getColor(QColor(self.canvas.annotation_style()["color"]), self, "Annotation colour")
+        if colour.isValid():
+            self.canvas.set_annotation_style(color=colour.name())
 
     def remove_marker(self):
         step = self.current_step()

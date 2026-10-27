@@ -26,6 +26,7 @@ class Step:
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     title: str = "New step"
     description: str = ""
+    section: str = ""
     notes: str = ""
     image: str | None = None
     timestamp: str = field(default_factory=now)
@@ -68,7 +69,7 @@ class Project:
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or data.get("schema_version") != 1:
+        if not isinstance(data, dict) or data.get("schema_version") not in (1, 2, 3):
             raise ValueError("Unsupported project schema version")
         try:
             project = cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)} and k != "steps"})
@@ -84,7 +85,7 @@ class Project:
                     step.marker = tuple(step.marker)
                 step.annotations = [Annotation(**a) for a in row.get("annotations", [])]
                 for a in step.annotations:
-                    if a.kind not in {"arrow", "line", "text", "highlighter", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
+                    if a.kind not in {"callout", "arrow", "line", "text", "highlighter", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
                         raise ValueError("Invalid annotation")
                     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in a.points):
                         raise ValueError("Invalid annotation coordinates")
@@ -99,9 +100,11 @@ class Project:
                         raise ValueError("Invalid annotation text")
                     if a.arrow_style not in {"solid", "open", "double"}:
                         raise ValueError("Invalid arrow style")
-                for name in ("title", "description", "notes", "timestamp"):
+                for name in ("title", "description", "notes", "timestamp", "section"):
                     if not isinstance(getattr(step, name), str):
                         raise ValueError(f"Invalid step {name}")
+                if len(step.section) > 120 or "\n" in step.section or "\r" in step.section:
+                    raise ValueError("Invalid section name")
                 if step.image is not None and not isinstance(step.image, str):
                     raise ValueError("Invalid image reference")
                 if not isinstance(step.marker_visible, bool):

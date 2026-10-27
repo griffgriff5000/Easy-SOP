@@ -14,6 +14,8 @@ def test_named_profiles_and_portable_snapshot(tmp_path):
     store = ProjectStore(tmp_path / "project")
     project = Project(template=library.snapshot(profile["id"], store.root))
     store.save(project)
+    import json
+    assert json.loads((store.root / "project.json").read_text())["schema_version"] == 2
     library.save("Company standard", {"body_size": 16}, identity=profile["id"])
     library.delete(profile["id"])
     loaded = store.load()
@@ -51,3 +53,15 @@ def test_custom_pdf_uses_profile_and_keeps_project_metadata(tmp_path):
     assert float(pdf.pages[0].mediabox.width) > float(pdf.pages[0].mediabox.height)
     assert "Controlled company copy" in pdf.pages[0].extract_text()
     assert p.company == ""
+
+
+def test_small_margin_keeps_header_outside_body(tmp_path):
+    from pypdf import PdfReader
+    from sop_capture.pdf_export import export_pdf
+    p = Project(template={"kind":"custom", "name":"Small", "settings":{"margin_mm":10,"cover":False,"header":"HEADER"}})
+    page = PdfReader(export_pdf(p, tmp_path, tmp_path / "small.pdf")).pages[0]
+    positions = {}
+    def visit(text, cm, tm, font, size):
+        if text.strip() in {"HEADER", "Document information"}: positions[text.strip()] = (tm[4]*cm[1]+tm[5]*cm[3]+cm[5], size)
+    page.extract_text(visitor_text=visit)
+    assert positions["HEADER"][0]-positions["Document information"][0] > positions["Document information"][1]+10

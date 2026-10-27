@@ -6,7 +6,7 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 
 | Check | Result |
 | --- | --- |
-| Full automated suite | 68 passed, including offline help, visual arrow styles, preview/export matching, styling, new shapes and editor workflows |
+| Full automated suite | 82 passed, including template library, Word generation, named custom layouts, offline help and editor workflows |
 | Domain and storage | Round-trip, immutable replacement images, reorder associations, recovery backup, path confinement, locking and schema validation passed |
 | Coordinates | Negative monitor origin, image scaling, outside clicks and invalid dimensions passed |
 | Output | Flattened redactions preserve originals, missing images, Unicode Latin text, long titles/descriptions and landscape PDF passed |
@@ -15,6 +15,11 @@ Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4
 | Annotation editing / duplication | Independent duplicate steps, saved annotation movement, corner/arrow endpoint resizing, selected deletion, scaled Qt mouse drags, and reverse-drawn shape movement passed |
 | Live preview and new tools | Every tool's non-mutating drag preview matches its committed renderer; Escape cancellation, selected colour/stroke/font/opacity, text/line/translucent-highlight persistence, and PDF screenshot pixels passed |
 | Help menu | F1 opens the offline guide without an open project; topic navigation, dialog reuse and current configured shortcut text passed |
+| Template library | Named profiles, duplicate rejection, stable project snapshots after library update/deletion, safe paths, old projects and apply/save rollback passed |
+| Company Word | Style detection/mapping, split-run fields, original preservation, inserted/redacted images, header-logo relationships and active-field rejection passed |
+| Actual Word conversion | Separate desktop Word instance generated a three-page PDF from a prepared company example; all pages rendered and inspected |
+| Packaged company export | Frozen subprocess generated DOCX and PDF using bundled modules and installed desktop Word |
+| Custom layout QA | Logo, Helvetica text, green headings, company footer and margins generated a six-page PDF; all pages and Templates screens inspected |
 | Real Windows native APIs | Window inventory, isolated synthetic-window rendering (716 × 469 pixels), low-level hook/global hotkey registration and cleanup passed |
 | Packaged rendering child | Synthetic target rendered successfully through the bundled executable's multiprocessing protocol |
 | Source application | Launch and timed close completed with exit code 0 |
@@ -30,6 +35,8 @@ The subsequent annotation-editing feature received an independent review. One mo
 On 27 October, live previews and per-annotation styling received another independent source review with no important findings. The updated toolbar and an active blue-arrow preview alongside a text label and translucent highlight were visually inspected. A local synthetic 3840 × 2160 renderer check averaged 71 ms/frame for a text label, arrow and translucent highlight; that measures image rendering, not complete UI frame rate. Pixel previews and exports use the same renderer. Existing annotation records receive defaults for the newly added style fields; projects saved by the updated app should be opened with this version rather than an older executable.
 
 ## Limits of this verification
+
+- Word-template PDF export was verified against installed desktop Microsoft Word on this machine. It requires a usable local Word installation and appropriate company fonts; arbitrary corporate templates/forms or Office activation/restriction environments were not supplied/tested. Imports use the documented placeholder contract or disclosed append behavior.
 
 - Windows denied foreground activation to the unattended native smoke script. The script therefore reports its foreground manual-session check as **not verified**. It did not test actual user mouse-click events or invoke the registered hotkey while the target had focus.
 - Chrome/Edge GPU content, separate popup windows, elevated targets, protected/secure content, physical multi-monitor arrangements and changed Windows DPI settings were not exercised. Unit coordinate tests are not a substitute for those checks.
@@ -58,3 +65,9 @@ Before regular corporate use, run these checks on the intended Windows machine a
 ## Reference contracts
 
 Native hook lifetime follows [Microsoft's SetWindowsHookEx documentation](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw). Toolbar exclusion is best effort using [SetWindowDisplayAffinity](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity). Frozen child startup calls `multiprocessing.freeze_support()` as required by [PyInstaller's multiprocessing guidance](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html#multi-processing). These API contracts do not replace the application-specific checks listed above.
+
+## Callouts, sections and review (27 October 2026)
+
+Added tests for callout persistence, independent label/target editing and undo, redaction precedence, section range grouping/renaming, backward compatibility, PDF and Word section headings, page-per-step heading placement, checklist completeness, missing assets, navigation and cancellation before export. Synthetic callout/editor and checklist screenshots generated under `.superpowers/visual`. Offscreen Qt rendered UI fonts as missing glyphs in this environment; the Pillow callout label rendered correctly. Native Windows font appearance needs an interactive check.
+
+Final automated suite: **92 passed**. Independent review findings on section page breaks, callout pointer hit testing and clamped-label dragging were corrected.

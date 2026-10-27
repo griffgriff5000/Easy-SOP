@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QPainter, QPixmap, QColor, QPen, QImage
 from PySide6.QtWidgets import QWidget
 
-from ..imaging import render_image
+from ..imaging import render_image, callout_layout
 from ..storage import ProjectStore
 from ..models import Annotation
 
@@ -121,7 +121,7 @@ class AnnotationCanvas(QWidget):
 
     def new_annotation(self, start, end):
         return Annotation(kind=self.tool, points=[*start, *end], color=self.draw_color, width=self.draw_width,
-                          text=self.draw_text if self.tool == "text" else "", font_size=self.draw_font_size, opacity=self.draw_opacity, arrow_style=self.draw_arrow_style)
+                          text=self.draw_text if self.tool in {"text", "callout"} else "", font_size=self.draw_font_size, opacity=self.draw_opacity, arrow_style=self.draw_arrow_style)
 
     def preview_image(self):
         if self.original is None or self.step is None: return None
@@ -151,13 +151,13 @@ class AnnotationCanvas(QWidget):
             super().keyPressEvent(event)
 
     def valid_gesture(self, start, end):
-        if self.tool in {"arrow", "line"}: return math.dist(start, end) >= 2
+        if self.tool in {"arrow", "line", "callout"}: return math.dist(start, end) >= 2
         return self.tool == "marker" or (abs(start[0]-end[0]) >= 2 and abs(start[1]-end[1]) >= 2)
 
     @staticmethod
     def handles(annotation, points=None):
         x1, y1, x2, y2 = points or annotation.points
-        if annotation.kind in {"arrow", "line"}: return [(x1, y1), (x2, y2)]
+        if annotation.kind in {"arrow", "line", "callout"}: return [(x1, y1), (x2, y2)]
         return [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
 
     def hit_test(self, point):
@@ -171,7 +171,12 @@ class AnnotationCanvas(QWidget):
                 if math.dist(point, position) <= tolerance:
                     return index, handle
             x1, y1, x2, y2 = annotation.points
-            if annotation.kind in {"arrow", "line"}:
+            if annotation.kind == "callout":
+                box, _, _ = callout_layout(annotation, (self.pixmap.width(), self.pixmap.height()))
+                if box[0] <= x <= box[2] and box[1] <= y <= box[3]: return index, None
+                x2 = max(box[0], min(box[2], x1))
+                y2 = max(box[1], min(box[3], y1))
+            if annotation.kind in {"arrow", "line", "callout"}:
                 dx, dy = x2-x1, y2-y1
                 length_squared = dx*dx+dy*dy
                 t = max(0, min(1, ((x-x1)*dx+(y-y1)*dy)/length_squared)) if length_squared else 0
@@ -187,12 +192,16 @@ class AnnotationCanvas(QWidget):
     def edit_points(self, annotation, handle, start, end):
         x1, y1, x2, y2 = annotation.points
         width, height = self.pixmap.width()-1, self.pixmap.height()-1
+        if annotation.kind == "callout" and handle is None:
+            box, _, _ = callout_layout(annotation, (self.pixmap.width(), self.pixmap.height()))
+            x2, y2 = box[:2]
+            return [x1, y1, max(0, min(width, x2+end[0]-start[0])), max(0, min(height, y2+end[1]-start[1]))]
         if handle is None:
             dx = max(-min(x1, x2), min(width-max(x1, x2), end[0]-start[0]))
             dy = max(-min(y1, y2), min(height-max(y1, y2), end[1]-start[1]))
             return [x1+dx, y1+dy, x2+dx, y2+dy]
         x, y = max(0, min(width, end[0])), max(0, min(height, end[1]))
-        if annotation.kind in {"arrow", "line"}:
+        if annotation.kind in {"arrow", "line", "callout"}:
             return [x, y, x2, y2] if handle == 0 else [x1, y1, x, y]
         opposite = self.handles(annotation)[(handle+2) % 4]
         return [min(x, opposite[0]), min(y, opposite[1]), max(x, opposite[0]), max(y, opposite[1])]
@@ -215,7 +224,7 @@ class AnnotationCanvas(QWidget):
             first, last = self.display_point(points[:2]), self.display_point(points[2:])
             painter.setPen(QPen(QColor("#087f8c"), 2, Qt.PenStyle.DashLine))
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            if annotation.kind in {"arrow", "line"}: painter.drawLine(first, last)
+            if annotation.kind in {"arrow", "line", "callout"}: painter.drawLine(first, last)
             else: painter.drawRect(QRectF(first, last).normalized())
             painter.setBrush(QColor("white"))
             for position in self.handles(annotation, points):
@@ -252,7 +261,7 @@ class AnnotationCanvas(QWidget):
             annotation = self.step.annotations[hit[0]]
             points = self.edit_points(annotation, hit[1], start, end)
             if math.dist(start, end) < .5 or points == annotation.points: return
-            if annotation.kind not in {"arrow", "line"} and (abs(points[2]-points[0]) < 2 or abs(points[3]-points[1]) < 2): return
+            if annotation.kind not in {"arrow", "line", "callout"} and (abs(points[2]-points[0]) < 2 or abs(points[3]-points[1]) < 2): return
             self.changing.emit()
             annotation.points = points
             self.refresh()

@@ -24,7 +24,9 @@ def appearance(values=None):
         if not isinstance(result[key], (int, float)) or not low <= result[key] <= high:
             raise ValueError(f"Invalid template {key}")
     if result["font"] not in {"Vera", "Helvetica", "Times-Roman", "Courier"}: raise ValueError("Unsupported template font")
-    for key in ("heading_color", "text_color"): ImageColor.getrgb(result[key])
+    for key in ("heading_color", "text_color"):
+        rgb = ImageColor.getrgb(result[key])
+        result[key] = "#%02x%02x%02x" % rgb[:3]
     for key in ("cover", "page_per_step"):
         if not isinstance(result[key], bool): raise ValueError(f"Invalid template {key}")
     for key in ("header", "footer", "company", "heading_style", "body_style", "caption_style"):

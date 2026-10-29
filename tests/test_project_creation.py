@@ -3,7 +3,8 @@ from sop_capture.models import Step
 from sop_capture.storage import ProjectStore
 from sop_capture.templates import TemplateLibrary
 from sop_capture.ui.main_window import MainWindow
-from PySide6.QtWidgets import QInputDialog,QFileDialog
+from PySide6.QtWidgets import QDialog
+from sop_capture.ui.new_project_dialog import NewProjectDialog
 
 
 def library_template(tmp_path):
@@ -14,12 +15,12 @@ def library_template(tmp_path):
 
 def test_new_projects_reuse_library_template_in_separate_folders(tmp_path,monkeypatch):
     library,profile=library_template(tmp_path);parent=tmp_path/'projects';parent.mkdir()
-    monkeypatch.setattr(QInputDialog,'getText',lambda *a,**kw:('Permit process',True))
     chosen=[]
-    def choose(*args,**kwargs):
-        chosen.append(args[3]);return 'Company procedure',True
-    monkeypatch.setattr(QInputDialog,'getItem',choose)
-    monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *a,**kw:str(parent))
+    def choose(dialog):
+        chosen.append([dialog.template.itemText(i) for i in range(dialog.template.count())])
+        dialog.title.setText('Permit process');dialog.location.setText(str(parent));dialog.template.setCurrentIndex(dialog.template.findData(profile['id']))
+        return QDialog.DialogCode.Accepted
+    monkeypatch.setattr(NewProjectDialog,'exec',choose)
     window=MainWindow(template_library=library);window.refresh_windows=lambda:None
     window.settings.fields['logo'].blockSignals(True);window.settings.fields['logo'].setText('')
     window.new_project();first=window.store;first_file=first.resolve(window.project.template['docx'])
@@ -40,9 +41,7 @@ def test_new_projects_reuse_library_template_in_separate_folders(tmp_path,monkey
 
 def test_cancel_template_selection_does_not_create_or_switch_project(tmp_path,monkeypatch):
     library,profile=library_template(tmp_path);window=MainWindow(template_library=library)
-    monkeypatch.setattr(QInputDialog,'getText',lambda *a,**kw:('Cancelled project',True))
-    monkeypatch.setattr(QInputDialog,'getItem',lambda *a,**kw:('',False))
-    monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *a,**kw:str(tmp_path))
+    monkeypatch.setattr(NewProjectDialog,'exec',lambda self:QDialog.DialogCode.Rejected)
     window.new_project()
     assert window.project is None and not (tmp_path/'SOP - Cancelled project').exists()
     window.close();window.deleteLater()

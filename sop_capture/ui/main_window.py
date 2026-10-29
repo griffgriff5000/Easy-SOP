@@ -62,13 +62,16 @@ def scroll(widget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, template_library=None):
+    def __init__(self, template_library=None,recent_projects=None,annotation_library=None):
         super().__init__()
         self.setWindowTitle("SOP Capture Studio")
         self.resize(1320, 900)
         self.setMinimumSize(1000, 700)
         self.project = self.store = self.target = None
         self.template_library = template_library
+        self.annotation_library_override=annotation_library
+        from ..recent_projects import RecentProjects
+        self.recent_projects=recent_projects if recent_projects is not None else RecentProjects(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'recent-projects.json')
         self.session = self.native_input = None
         self.history, self.future = [], []
         self.loading = False
@@ -115,13 +118,15 @@ class MainWindow(QMainWindow):
         self.pages = QStackedWidget()
         self.nav_group = QButtonGroup(self)
         self.nav_buttons = []
+        self.home_nav=button('Home',lambda:self.show_page(5));self.home_nav.setCheckable(True);self.nav_group.addButton(self.home_nav);side.addWidget(self.home_nav)
         for index, text in enumerate(("Capture", "Step editor", "Document", "Settings", "Templates")):
             nav = button(text, lambda checked=False, i=index: self.show_page(i))
             nav.setCheckable(True)
             self.nav_group.addButton(nav)
             self.nav_buttons.append(nav)
             side.addWidget(nav)
-        side.addWidget(button("Annotation Studio", self.show_annotation_studio))
+        self.annotation_nav=button('Annotation library',lambda:self.show_page(6));self.annotation_nav.setCheckable(True);self.nav_group.addButton(self.annotation_nav);side.addWidget(self.annotation_nav)
+        self.nav_buttons.extend([self.home_nav,self.annotation_nav])
         side.addStretch()
         local = QLabel("LOCAL BY DESIGN\nYour captures stay on this PC.")
         local.setWordWrap(True)
@@ -138,12 +143,21 @@ class MainWindow(QMainWindow):
         from .templates_page import TemplatesPage
         if self.template_library is None:
             self.template_library = TemplateLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)) / "templates")
-        self.templates_page = TemplatesPage(self.template_library, self.apply_template, self.preview_pdf)
+        self.templates_page = TemplatesPage(self.template_library, self.apply_template, self.preview_pdf,library_preview_callback=self.preview_template)
         self.pages.addWidget(self.templates_page)
+        from .home_page import HomePage
+        self.home_page=HomePage();self.pages.addWidget(self.home_page)
+        self.home_page.new_requested.connect(self.new_project);self.home_page.browse_requested.connect(self.open_project)
+        self.home_page.templates_requested.connect(lambda:self.show_page(4));self.home_page.annotations_requested.connect(lambda:self.show_page(6))
+        self.home_page.open_requested.connect(self.open_project_path);self.home_page.remove_requested.connect(self.remove_recent_project);self.home_page.continue_requested.connect(lambda:self.show_page(1))
+        from .annotation_library_page import AnnotationLibraryPage
+        self.annotation_library_page=AnnotationLibraryPage(self._annotation_library());self.pages.addWidget(self.annotation_library_page)
+        self.annotation_library_page.changed.connect(self.refresh_saved_annotations);self.annotation_library_page.changed.connect(self._refresh_home)
+        self.annotation_library_page.use_requested.connect(self.use_library_annotation)
         layout.addWidget(sidebar)
         layout.addWidget(self.pages, 1)
         self.setCentralWidget(root)
-        self.show_page(0)
+        self.show_page(5)
         self.statusBar().showMessage("Ready. Create or open an SOP to begin.")
         self.floating = QDialog(self, Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint)
         self.floating.setWindowTitle("SOP capture controls")
@@ -225,7 +239,7 @@ class MainWindow(QMainWindow):
         for menu in self.app_menus.values():menu.clear()
         groups={"File":["new","open","save",None,"preview_pdf","export_pdf","export_word"],
                 "Edit":["undo","redo",None,"add_step","duplicate_step","delete_step",None,"move_up","move_down","group_steps","rename_section"],
-                "View":["page_0","page_1","page_2","page_4","page_3",None,"annotation_studio"],
+                "View":["page_5","page_0","page_1","page_2","page_4","page_6","page_3",None,"annotation_studio"],
                 "Settings":["page_3","shortcuts"]}
         for name,identities in groups.items():
             for identity in identities:
@@ -268,6 +282,7 @@ class MainWindow(QMainWindow):
         studio = AnnotationStudio(library, design, bool(step and self.canvas.original is not None), self)
         result=studio.exec()
         self.refresh_saved_annotations()
+        self.annotation_library_page.refresh()
         if result != QDialog.DialogCode.Accepted: return
         snapshot = deepcopy(studio.document.design)
         self.selected_saved_annotation=None
@@ -288,6 +303,7 @@ class MainWindow(QMainWindow):
 
     def _annotation_library(self):
         from ..designs import AnnotationLibrary
+        if self.annotation_library_override is not None:return self.annotation_library_override
         return AnnotationLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'annotations')
 
     def _update_library_save_button(self,*args):
@@ -308,6 +324,7 @@ class MainWindow(QMainWindow):
             design,_=from_annotation(annotation,self.canvas.original.size if self.canvas.original else None)
             identity=self._annotation_library().save(name.strip(),design)
             self.refresh_saved_annotations()
+            self.annotation_library_page.refresh(identity)
             self.notice(f'Saved "{name.strip()}" to the annotation library. Available in all projects.')
             return identity
         except (ValueError,OSError) as exc:self.fail(exc)
@@ -669,10 +686,24 @@ class MainWindow(QMainWindow):
     def show_page(self, index):
         self.pages.setCurrentIndex(index)
         self.nav_buttons[index].setChecked(True)
+        if index==5:self._refresh_home()
+        if index==6:self.annotation_library_page.refresh()
         if index==2:QTimer.singleShot(0,self._maybe_builder_preview)
         page = self.pages.widget(index)
         if isinstance(page, QScrollArea):
             page.verticalScrollBar().setValue(0)
+
+    def _refresh_home(self):
+        self.home_page.refresh(self.recent_projects.entries(),self.project,len(self.template_library.list()),len(self._annotation_library().entries()))
+
+    def remove_recent_project(self,root):
+        try:self.recent_projects.remove(root);self._refresh_home()
+        except OSError as exc:self.fail(exc)
+
+    def use_library_annotation(self,identity):
+        if not self.current_step() or self.canvas.original is None:
+            self.notice('Open a screenshot step to place this design.');return
+        self.show_page(1);self._choose_saved_annotation(identity)
 
     def _builder_document_key(self):
         from .builder_preview import document_key
@@ -826,8 +857,11 @@ class MainWindow(QMainWindow):
         self.pages.widget(2).setEnabled(ready)
         self.pages.widget(3).setEnabled(not self.active and not self.busy)
         self.pages.widget(4).setEnabled(not self.active and not self.busy)
+        self.pages.widget(5).setEnabled(not self.active and not self.busy)
+        self.pages.widget(6).setEnabled(not self.active and not self.busy)
+        self.annotation_library_page.set_can_use(ready and self.current_step() is not None and self.canvas.original is not None)
         self.templates_page.apply_button.setEnabled(ready)
-        self.templates_page.preview_button.setEnabled(ready)
+        self.templates_page.preview_button.setEnabled(not self.active and not self.busy and not self.builder_preview.running)
         self.screenshots_button.setEnabled(self.store is not None)
         self.editor_panel.setEnabled(ready and self.current_step() is not None)
         count=len(self.project.steps) if self.project else 0
@@ -857,23 +891,21 @@ class MainWindow(QMainWindow):
         self._refresh_project()
         self.flush_save()
         self._update_controls()
+        try:self.recent_projects.record(self.project,self.store.root)
+        except OSError:log.warning('Recent project history could not be saved',exc_info=True)
+        self._refresh_home()
 
     def new_project(self):
         if self.active or self.busy: return
-        title, accepted = QInputDialog.getText(self, "New SOP", "Procedure title:")
-        if not accepted or not title.strip(): return
         try:profiles=self.template_library.list()
         except Exception as exc:self.fail(exc);return
-        identity='standard'
-        if len(profiles)>1:
-            current_id=self.project.template.get('id','standard') if self.project else 'standard'
-            current=next((i for i,profile in enumerate(profiles) if profile['id']==current_id),0)
-            name,accepted=QInputDialog.getItem(self,'New SOP','Choose a saved template for this project:',[profile['name'] for profile in profiles],current,False)
-            if not accepted:return
-            identity=next(profile['id'] for profile in profiles if profile['name']==name)
-        parent = QFileDialog.getExistingDirectory(self, "Choose parent folder — a new project folder will be created", self.settings.value("location"))
-        if not parent: return
-        safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", title).strip(" .")[:100] or "Procedure"
+        from .new_project_dialog import NewProjectDialog,project_folder_name
+        current=self.project.template.get('id','standard') if self.project else 'standard'
+        dialog=NewProjectDialog(profiles,self.settings.value('location'),current,self)
+        if dialog.exec()!=QDialog.DialogCode.Accepted:dialog.deleteLater();return
+        title,identity,parent=dialog.values();dialog.deleteLater()
+        parent=Path(parent).expanduser()
+        base=project_folder_name(title)
         project = Project(title=title.strip(), company=self.settings.value("company"), author=self.settings.value("author"),
                           reference=f"{self.settings.value('prefix')}-001", orientation=self.settings.value("orientation"))
         try:
@@ -881,9 +913,10 @@ class MainWindow(QMainWindow):
             project.marker_color = self.settings.value("marker_color")
             project.marker_size = self.settings.value("marker_size")
             project.marker_numbers = self.settings.value("marker_numbers")
+            parent.mkdir(parents=True,exist_ok=True)
             suffix=1
             while True:
-                folder=Path(parent)/(f'SOP - {safe}'+(f' ({suffix})' if suffix>1 else ''))
+                folder=Path(parent)/(base+(f' ({suffix})' if suffix>1 else ''))
                 try:
                     folder.mkdir()
                     break
@@ -903,8 +936,15 @@ class MainWindow(QMainWindow):
         if self.active or self.busy: return
         path, _ = QFileDialog.getOpenFileName(self, "Open SOP project", self.settings.value("location"), "SOP project (project.json project.backup.json)")
         if not path: return
-        store = ProjectStore(Path(path).parent)
+        self.open_project_path(path)
+
+    def open_project_path(self,path):
+        if self.active or self.busy:return
+        path=Path(path)
+        store = ProjectStore(path.parent if path.is_file() else path)
         if self.store and store.root == self.store.root:
+            try:self.recent_projects.record(self.project,self.store.root);self._refresh_home()
+            except OSError:log.warning('Recent project history could not be saved',exc_info=True)
             self.show_page(1)
             return
         try:
@@ -972,6 +1012,8 @@ class MainWindow(QMainWindow):
         if self.project and self.store:
             self.word_editor.save_document()
             self.store.save(self.project)
+            try:self.recent_projects.update_title(self.project,self.store.root)
+            except OSError:log.warning('Recent project title could not be updated',exc_info=True)
             self.project_label.setText(f"{self.project.title}  ·  {len(self.project.steps)} steps\n{self.store.root}")
             self.notice("All changes saved locally")
 
@@ -1593,30 +1635,47 @@ class MainWindow(QMainWindow):
             if error:
                 self.fail(error)
                 return
-            from PySide6.QtPdf import QPdfDocument
-            from PySide6.QtPdfWidgets import QPdfView
-            dialog = QDialog(self)
-            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-            dialog.setWindowTitle("PDF preview — review sensitive information before export")
-            dialog.resize(950, 850)
-            layout = QVBoxLayout(dialog)
-            page_header(layout,"PDF preview","Review the document and any sensitive information before exporting.")
-            view = QPdfView(dialog)
-            document = QPdfDocument(dialog)
-            # Qt PDF's renderer can retain a file handle after close(). Keep the
-            # preview's source in a parent-owned memory buffer instead.
-            source = QBuffer(dialog)
-            source.setData(value.read_bytes())
-            source.open(QIODevice.OpenModeFlag.ReadOnly)
-            document.load(source)
-            dialog.finished.connect(document.close)
-            view.setDocument(document)
-            view.setPageMode(QPdfView.PageMode.MultiPage)
-            view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
-            layout.addWidget(view)
-            footer=QHBoxLayout();footer.addStretch();footer.addWidget(button("Close preview",dialog.close));layout.addLayout(footer)
-            dialog.show()
+            self._show_pdf_preview(value)
         self.run_task(lambda: export_pdf(project, root, path), finished)
+
+    def preview_template(self,identity):
+        if self.active or self.busy or self.builder_preview.running:return
+        root=Path(self.preview_dir.name)/('template-'+uuid.uuid4().hex)
+        def prepare():
+            profile=self.template_library.snapshot(identity,root)
+            project=Project(title='Template preview',reference='PREVIEW-001',author='Example author',template=profile,
+                            steps=[Step(title='Open the application',description='Example instruction shown in the selected company style.'),Step(title='Confirm the details',description='Review the information before continuing.')])
+            project.steps[0].image=ProjectStore(root).add_image(Image.new('RGB',(900,500),'#e6eff6'),project.steps[0].id)
+            return export_pdf(project,root,root/'preview.pdf')
+        def finished(path,error):
+            if error:self.fail(error)
+            else:self._show_pdf_preview(path)
+        self.run_task(prepare,finished)
+
+    def _show_pdf_preview(self,path):
+        from PySide6.QtPdf import QPdfDocument
+        from PySide6.QtPdfWidgets import QPdfView
+        dialog = QDialog(self)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        dialog.setWindowTitle("PDF preview — review sensitive information before export")
+        dialog.resize(950, 850)
+        layout = QVBoxLayout(dialog)
+        page_header(layout,"PDF preview","Review the document and any sensitive information before exporting.")
+        view = QPdfView(dialog)
+        document = QPdfDocument(dialog)
+        # Qt PDF's renderer can retain a file handle after close(). Keep the
+        # preview's source in a parent-owned memory buffer instead.
+        source = QBuffer(dialog)
+        source.setData(path.read_bytes())
+        source.open(QIODevice.OpenModeFlag.ReadOnly)
+        document.load(source)
+        dialog.finished.connect(document.close)
+        view.setDocument(document)
+        view.setPageMode(QPdfView.PageMode.MultiPage)
+        view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
+        layout.addWidget(view)
+        footer=QHBoxLayout();footer.addStretch();footer.addWidget(button("Close preview",dialog.close));layout.addLayout(footer)
+        dialog.show()
 
     def open_screenshots(self):
         if self.store:

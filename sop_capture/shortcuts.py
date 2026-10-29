@@ -36,7 +36,7 @@ ACTIONS = {
 }
 for name, label in [('marker','Click marker'), ('edit','Edit annotations'), ('arrow','Arrow'), ('line','Straight line'), ('callout','Text callout'), ('text','Text label'), ('circle','Circle'), ('highlight','Outline box'), ('highlighter','Translucent highlight'), ('redact','Redaction'), ('blur','Blur'), ('magnifier','Magnifier')]:
     ACTIONS['tool_'+name] = ('Tool: '+label, '', True, 'step')
-for index, label in enumerate(['Capture','Step editor','Document','Settings','Templates']):
+for index, label in enumerate(['Capture','Step editor','Document','Settings','Templates','Home','Annotation library']):
     ACTIONS['page_'+str(index)] = ('Show '+label, '', True, 'idle')
 
 

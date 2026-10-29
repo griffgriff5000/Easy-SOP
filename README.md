@@ -41,7 +41,7 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 
 Open **Help → User guide** or press **F1** in the application for the built-in, offline guide. Topics cover the full workflow, annotations, saving/recovery, settings and troubleshooting. **Help → Keyboard shortcuts** lists shortcuts including your currently configured manual-capture key. The Help menu also provides Open logs and About.
 
-1. Select **New SOP**, enter a title, choose a saved template and choose the parent directory. The app creates a fresh `SOP - <title>` folder; repeated titles get `(2)`, `(3)`, etc. Or open an existing `project.json`.
+1. On **Home**, choose **New project** and set its name, saved template and parent folder in one window. The proposed folder is shown before creation. Each project gets a fresh `SOP - <title>` folder; repeated titles get `(2)`, `(3)`, etc. Reopen work from **Recent projects**, or browse to an existing `project.json`.
 2. Refresh the application list, select the target window and use **Preview selection** to confirm its capture support.
 3. Enable Windows Do Not Disturb manually if required. The application links to notification settings and does not change them.
 4. Select **Start capture**, perform actions in the selected window and use the floating **Pause / Resume / Stop** controls. Default: left-click release followed by a 400 ms delay. **Ctrl+Shift+F8** takes a manual screenshot while the selected target is foreground. Shortcut conflicts are reported; change the shortcut in Settings.
@@ -63,6 +63,10 @@ Choose a window on Capture before using **Retake selected window** in the editor
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.
 
 ## Template library and company documents
+
+**Home** opens at startup and keeps up to 12 recent project shortcuts locally. Removing a shortcut leaves the project files in place. Unavailable projects remain listed so you can remove their shortcuts. **Continue editing** returns to the currently open project.
+
+Both libraries are available without a project open. In **Templates**, **Preview template** creates a temporary sample without applying it to the current SOP. In **Annotation library**, browse previews, create or edit designs in Studio, duplicate, import artwork or editable packs, export packs and delete saved entries. **Use on current screenshot** places a saved design through the step editor. Each project keeps independent copies of its templates and placed annotations.
 
 Open **Templates** to choose **Standard SOP**, a named custom layout, or an uploaded Word template. Select an entry and choose **Apply selected template to SOP**. Step editor shows the current template; PDF preview/export use that selection.
 

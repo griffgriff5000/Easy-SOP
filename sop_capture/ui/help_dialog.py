@@ -36,7 +36,7 @@ TOPICS = {
     "Getting started": """<h1>Create your first SOP</h1>
 <p>SOP Capture Studio turns screenshots of a process into an editable procedure and a PDF.</p>
 <ol>
-<li>On <b>Capture</b>, choose <b>New SOP</b>, enter a title, choose a saved template and choose a parent folder. A fresh SOP subfolder is created automatically; repeated titles get numbered folders.</li>
+<li>On <b>Home</b>, choose <b>New project</b> and enter its name, saved template and parent folder in one window. Check the proposed folder, then choose Create project. Each project gets a fresh subfolder; repeated titles get numbered folders. Reopen work from Recent projects or browse to project.json. Removing a recent shortcut keeps the project files.</li>
 <li>Choose <b>Refresh windows</b>, select the application you want to document and use <b>Preview selection</b> to check the screenshot.</li>
 <li>Choose <b>Start capture</b>. The main window minimises and floating capture controls appear.</li>
 <li>Perform the process in your selected application. Clicks create steps automatically.</li>
@@ -114,7 +114,8 @@ TOPICS = {
 """,
     "Templates": """
 <h1>Choose or design a document template</h1>
-<p>Open <b>Templates</b> in the sidebar. The library contains Standard SOP, named custom PDF layouts and uploaded Word documents. Save/upload a template once and reuse it for any number of projects. New SOP lets you choose a library entry, then creates a new project folder with a separate template copy. Project-specific edits do not change the library or other projects.</p>
+<p>Open <b>Templates</b> in the sidebar. The library contains Standard SOP, named custom PDF layouts and uploaded Word documents. Save/upload a template once and reuse it for any number of projects. Preview template uses a temporary sample, without changing your SOP. New project creates a new folder with a separate template copy. Project-specific edits do not change the library or other projects.</p>
+<p><b>Annotation library</b> is also available without a project open. Preview designs, create/edit in Studio, duplicate, import artwork or editable packs, export packs and delete saved entries. Use on current screenshot returns to the step editor. Library changes leave already placed copies unchanged.</p>
 <h2>Create a custom layout</h2>
 <ol><li>Choose <b>New custom template</b> and enter a name.</li><li>Choose a logo, company default, fonts, sizes, colours, margins, screenshot width, cover and page-break preferences. Header/footer text can use {title}, {reference}, {version} and {company}.</li><li><b>Save changes</b> adds it to the list. Use <b>Save as new template</b> with a different name for a variant.</li><li>Open an SOP, select an entry and choose <b>Apply selected template to SOP</b> or <b>Apply and preview PDF</b>.</li></ol>
 <p>An SOP's existing company text takes priority over the template default. Template orientation overrides Document unless set to project. Header/footer space is reserved even with small margins.</p>

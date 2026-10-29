@@ -3,12 +3,13 @@ import os
 import gc
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import pytest
-from PySide6.QtCore import QEvent
+from PySide6.QtCore import QEvent,QStandardPaths
 from PySide6.QtWidgets import QApplication
 
 
 @pytest.fixture(scope='session',autouse=True)
 def qt_application():
+    QStandardPaths.setTestModeEnabled(True)
     app=QApplication.instance() or QApplication([])
     yield app
     # Finish Qt resource disposal while QApplication still owns its platform state.

@@ -30,7 +30,7 @@ def main():
         root = Path(args.project)
         if root.is_file(): root = root.parent
         store = ProjectStore(root)
-        try: window.set_project(store.load(), store)
+        try: window.set_project(store.load(), store);window.show_page(1)
         except Exception as exc: window.fail(exc)
     window.show()
     if args.smoke_test:

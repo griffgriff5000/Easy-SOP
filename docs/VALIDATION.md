@@ -1,5 +1,18 @@
 # Verification — 26 October 2026
 
+## Project Home update — 29 October 2026
+
+- Full automated suite: **193 passed** (exit 0).
+- Home starts the application with recent project shortcuts and direct access to both reusable libraries.
+- New Project combines name, saved template and parent folder, previews the destination and creates independent project copies.
+- Tests cover recent history ordering, missing/corrupt entries, cancellation, folder independence, library navigation/duplication/deletion and template previews leaving the active SOP unchanged.
+- `scripts/verify_home.py` rendered Home, Templates, Annotation library and New Project in light/dark themes at 1000 and 1320 pixel window widths. The rendered pages were visually inspected.
+- A standalone Standard template preview generated a valid PDF without opening a project.
+- Independent code review found an optional recent-history value validation issue; normalization and its regression test resolved it. No remaining important issues were reported.
+- PyInstaller completed with exit 0. Packaged startup, DOCX/PDF export, edited-document export, embedded Word editing/save and automatic template preparation checks passed.
+
+The earlier checks below describe the original implementation.
+
 Environment: Windows, Python 3.12.10, PySide6 6.12.0, Pillow 12.3.0, ReportLab 4.5.1. Dependencies are installed in `%USERPROFILE%\.venvs\easy-sop`; the checkout-local `.venv` has an incomplete Qt installation due to Windows' path-length limit and should not be used.
 
 ## Executed checks

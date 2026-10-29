@@ -10,9 +10,10 @@ from ..word_export import inspect_docx, create_example
 
 
 class TemplatesPage(QWidget):
-    def __init__(self, library, apply_callback, preview_callback):
+    def __init__(self, library, apply_callback, preview_callback,library_preview_callback=None):
         super().__init__()
         self.library, self.apply_callback, self.preview_callback = library, apply_callback, preview_callback
+        self.library_preview_callback=library_preview_callback
         self.loading, self.dirty = True, False
         self.current_id = None
         self.source_docx = None
@@ -24,7 +25,7 @@ class TemplatesPage(QWidget):
         self.save_button=self._button("Save",self.save_changes);row.addWidget(self.save_button)
         manage=menu_button("More",[("Save as new template",lambda:self.save_changes(as_new=True)),("Delete from library",self.delete_selected)])
         self.save_as_button,self.delete_button=manage.menu().actions();row.addWidget(manage);row.addStretch()
-        self.preview_button=self._button("Apply and preview",self.preview_selected);row.addWidget(self.preview_button)
+        self.preview_button=self._button("Preview template",self.preview_selected);row.addWidget(self.preview_button)
         self.apply_button=self._button("Apply template",self.apply_selected);self.apply_button.setObjectName("primary");row.addWidget(self.apply_button)
         layout.addLayout(row);layout.addWidget(self.active_label)
         splitter=QSplitter();self.catalogue=QListWidget();self.catalogue.setMinimumWidth(180);self.catalogue.setWordWrap(True);self.catalogue.currentItemChanged.connect(self._selected);splitter.addWidget(self.catalogue)
@@ -225,4 +226,8 @@ class TemplatesPage(QWidget):
             return False
 
     def preview_selected(self):
+        if self.library_preview_callback is not None:
+            if self.dirty:
+                QMessageBox.information(self,'Save template first','Save your template changes before previewing.');return
+            self.library_preview_callback(self.current_id);return
         if self.apply_selected(): self.preview_callback()

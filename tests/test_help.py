@@ -16,7 +16,8 @@ def test_f1_opens_offline_guide_without_project_and_navigates():
     app.processEvents()
     guide = window.help_dialog
     assert guide.isVisible()
-    assert "New SOP" in guide.browser.toPlainText()
+    assert "New project" in guide.browser.toPlainText()
+    assert "Recent projects" in guide.browser.toPlainText()
     guide.show_topic("Annotations")
     assert "Arrow style" in guide.browser.toPlainText()
     assert "Esc" in guide.browser.toPlainText()

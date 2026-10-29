@@ -39,6 +39,16 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 
 ## Workflow
 
+### Make the workspace your own
+
+Each screen remembers its own layout. Drag panel title bars to another edge, dock panels together, resize their boundaries, double-click a title bar to float it, or close a panel to hide it. Floating panels can be used on another monitor and are hidden while another screen is active. Saved floating windows are brought back onto an available display if a monitor is disconnected.
+
+Open **Workspace → Customise this workspace** (or **Customise workspace…** on the menu bar) to choose visible panels, check toolbar actions and drag them into the desired order. Choose icons, text or both; set this screen's theme, text size and spacing; and lock panel/toolbar positions. **Apply** affects the current screen. Screen actions remain available as an optional panel and through existing menus.
+
+Use **Save named** to keep a reusable layout. **Load named** restores it exactly on the original screen, or applies compatible preferences on another screen. **Copy to…** lets you select particular screens or select all. Shared panel positions/visibility, appearance and shared toolbar choices carry over; destination-only panels/actions remain. Layout copying never transfers document content, annotations, captured steps or approvals.
+
+Use **Workspace → Show / hide panels** to recover a closed panel, **Reset this screen** to recover the default, or **Reset all screens** for all defaults. Named layouts and documents are retained by resets. Existing **Customise shortcuts** is available from Workspace too. Layouts are stored locally under the application's data directory, independently of projects.
+
 Open **Help → User guide** or press **F1** in the application for the built-in, offline guide. Topics cover the full workflow, annotations, saving/recovery, settings and troubleshooting. **Help → Keyboard shortcuts** lists shortcuts including your currently configured manual-capture key. The Help menu also provides Open logs and About.
 
 1. On **Home**, choose **New project** and set its name, saved template and parent folder in one window. The proposed folder is shown before creation. Each project gets a fresh `SOP - <title>` folder; repeated titles get `(2)`, `(3)`, etc. Reopen work from **Recent projects**, or browse to an existing `project.json`.

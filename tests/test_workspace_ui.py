@@ -83,7 +83,7 @@ def test_shared_menus_update_after_shortcut_rebinding():
     assert window.action_bindings['new'].isEnabled()
     profile=default_profile();profile['bindings']['help']='Ctrl+Alt+H'
     window.apply_shortcut_profile(profile,persist=False)
-    assert len(window.menuBar().actions())==5
+    assert len(window.menuBar().actions())==7
     assert window.app_menus['File'].actions()[0] is window.action_bindings['new']
     assert window.help_menu.actions()[0] is window.action_bindings['help']
     assert window.help_action.shortcut().toString()=='Ctrl+Alt+H'

@@ -135,7 +135,7 @@ class RevisionPage(QWidget):
         if not same:
             if self.workspace_lock:self.workspace_lock.unlock()
             self.workspace_lock=candidate
-        self.work=work;self.location.setText(str(work.root));self.title.setText(work.state['title']);self.revision.setText(work.state['revision']);self.summary.setText(work.state['change_summary'])
+        self.work=work;self.location.setText('Workspace: '+work.root.name);self.location.setToolTip(str(work.root));self.title.setText(work.state['title']);self.revision.setText(work.state['revision']);self.summary.setText(work.state['change_summary'])
         self.destination.clear()
         for dest in work.destinations:self.destination.addItem(dest['label'],dest['id'])
         self.destination.setCurrentIndex(self.destination.count()-1)

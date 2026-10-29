@@ -6,6 +6,11 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QListWidget, QT
 
 
 TOPICS = {
+    "Custom workspaces": """<h1>Arrange the app around your work</h1>
+<p>Each screen has its own layout. Drag panel title bars to dock at any edge, resize boundaries, double-click a title to float, or close a panel to hide it. Floating panels are hidden on inactive screens and can be moved to another monitor.</p>
+<p><b>Workspace &gt; Customise this workspace</b> selects visible panels and toolbar actions. Drag checked actions into order, choose icons/text, theme, text size and compact/comfortable spacing, then Apply. Lock layout prevents accidental docking changes. The menu-bar Customise workspace control remains available even when all panels/toolbars are hidden.</p>
+<p><b>Save named</b> stores a reusable layout; <b>Load named</b> restores it. <b>Copy to…</b> targets selected screens, with Select all for the whole app. Shared roles and settings copy; destination-specific tools stay available. Document content, SOP steps and review decisions are never copied by a layout.</p>
+<p><b>Show / hide panels</b> reopens panels. Reset this screen and Reset all screens restore defaults without deleting named layouts or documents. Preferences save locally and separately from projects. Customise shortcuts opens the existing action/shortcut editor.</p>""",
     "Revising procedures": """<h1>Move an old procedure into a new Word template</h1>
 <p>Open <b>Revise document</b> in the sidebar. Choose <b>New revision</b>, an old Word .docx or PDF, a new Word .docx template, an unused workspace folder and a new revision label. Saved Word templates are available in the dialog. Original documents are preserved; <b>Open revision</b> resumes revision.json.</p>
 <p>Select an old element on the left. Choose its destination on the right, edit text or table cells, then <b>Approve placement</b>. <b>Suggest</b> proposes a match without approval. <b>Order</b> reorders approved content; exclusions require a reason. Undo/redo restores transfer decisions. The template's existing cover, tables, headers, footers and sections stay intact.</p>

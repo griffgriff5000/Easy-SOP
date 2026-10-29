@@ -14,6 +14,7 @@ from sop_capture.templates import TemplateLibrary
 from sop_capture.designs import AnnotationLibrary
 from sop_capture.recent_projects import RecentProjects
 from sop_capture.ui.theme import stylesheet
+from sop_capture.workspace_layouts import LayoutLibrary
 
 
 def main():
@@ -30,9 +31,9 @@ def main():
         if e['kind']=='heading':work.exclude(e['id'],'New template supplies the headings')
         else:work.approve(e['id'],work.destinations[1 if e.get('section')=='Responsibilities' else 2]['id'])
     build_document(work,out/'Rev B.docx')
-    window=MainWindow(TemplateLibrary(out/'library'),RecentProjects(out/'recent.json'),AnnotationLibrary(out/'annotations'));window.revision_page.bind(work);window.show_page(7);window.show()
+    window=MainWindow(TemplateLibrary(out/'library'),RecentProjects(out/'recent.json'),AnnotationLibrary(out/'annotations'),LayoutLibrary(out/'layouts.json'));window.revision_page.bind(work);window.show_page(7);window.show()
     for dark in (False,True):
-        window.setStyleSheet(stylesheet(dark));theme='dark' if dark else 'light'
+        window._set_theme(dark);theme='dark' if dark else 'light'
         for width,height in ((1000,760),(1440,950)):
             window.resize(width,height);window.revision_page.sources.setCurrentRow(3);window.revision_page.right_tabs.setCurrentIndex(0);app.processEvents();window.grab().save(str(out/f'review-{theme}-{width}.png'))
             window.revision_page.right_tabs.setCurrentIndex(2);app.processEvents();window.grab().save(str(out/f'preview-{theme}-{width}.png'))

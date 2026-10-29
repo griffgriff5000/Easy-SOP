@@ -62,7 +62,7 @@ def scroll(widget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, template_library=None,recent_projects=None,annotation_library=None):
+    def __init__(self, template_library=None,recent_projects=None,annotation_library=None,layout_library=None):
         super().__init__()
         self.setWindowTitle("SOP Capture Studio")
         self.resize(1320, 900)
@@ -100,6 +100,8 @@ class MainWindow(QMainWindow):
         self._build()
         self.setStyleSheet(stylesheet(self.settings.value("theme") == "Dark"))
         self._actions()
+        from .workspace_setup import install_workspaces
+        install_workspaces(self,layout_library)
         self._update_controls()
 
     def _build(self):
@@ -128,6 +130,10 @@ class MainWindow(QMainWindow):
         self.annotation_nav=button('Annotation library',lambda:self.show_page(6));self.annotation_nav.setCheckable(True);self.nav_group.addButton(self.annotation_nav);side.addWidget(self.annotation_nav)
         self.nav_buttons.extend([self.home_nav,self.annotation_nav])
         self.revision_nav=button('Revise document',lambda:self.show_page(7));self.revision_nav.setCheckable(True);self.nav_group.addButton(self.revision_nav);side.addWidget(self.revision_nav);self.nav_buttons.append(self.revision_nav)
+        side.removeWidget(self.revision_nav);side.insertWidget(side.indexOf(self.nav_buttons[4]),self.revision_nav)
+        side.removeWidget(self.nav_buttons[3]);side.addWidget(self.nav_buttons[3])
+        for before,title in [(self.nav_buttons[0],'CREATE AND EDIT'),(self.nav_buttons[4],'REUSABLE LIBRARIES')]:
+            label=QLabel(title);label.setStyleSheet('font-size:8pt;padding:7px 10px 2px;color:#587084;');side.insertWidget(side.indexOf(before),label)
         side.addStretch()
         local = QLabel("LOCAL BY DESIGN\nYour captures stay on this PC.")
         local.setWordWrap(True)
@@ -138,7 +144,7 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self._capture_page())
         self.pages.addWidget(self._editor_page())
         self.pages.addWidget(self._document_page())
-        self.settings = SettingsPage(lambda dark: self.setStyleSheet(stylesheet(dark)))
+        self.settings = SettingsPage(self._set_theme)
         self.pages.addWidget(scroll(self.settings))
         from ..templates import TemplateLibrary
         from .templates_page import TemplatesPage
@@ -687,6 +693,7 @@ class MainWindow(QMainWindow):
         self.show_page(2);self.document_tabs.setCurrentIndex(0);self.builder_modes.setCurrentIndex(1);self.builder_edit_tabs.setCurrentWidget(self.template_fields_editor)
 
     def show_page(self, index):
+        if hasattr(self,'workspaces'):self.workspaces.activate(self.workspace_keys[index])
         self.pages.setCurrentIndex(index)
         self.nav_buttons[index].setChecked(True)
         if index==5:self._refresh_home()
@@ -695,6 +702,11 @@ class MainWindow(QMainWindow):
         page = self.pages.widget(index)
         if isinstance(page, QScrollArea):
             page.verticalScrollBar().setValue(0)
+
+    def _set_theme(self,dark):
+        self.setStyleSheet(stylesheet(dark))
+        if hasattr(self,'workspaces'):
+            for host in self.workspaces.hosts.values():host.global_dark=dark;host.appearance()
 
     def _refresh_home(self):
         self.home_page.refresh(self.recent_projects.entries(),self.project,len(self.template_library.list()),len(self._annotation_library().entries()))
@@ -878,6 +890,11 @@ class MainWindow(QMainWindow):
                 enabled=context=="any" or (context=="recording" and self.active and not self.busy) or (context not in {"any","recording"} and not self.active and not self.busy and (context=="idle" or (self.project is not None and (context!="step" or self.current_step() is not None))))
                 if identity in {"preview_pdf","export_pdf","export_word"} and self.builder_preview.running:enabled=False
                 action.setEnabled(bool(enabled))
+        if hasattr(self,'workspaces'):
+            for key,host in self.workspaces.hosts.items():
+                host.setEnabled(not self.active and not self.busy if key not in {'capture','home','settings'} else not self.busy)
+                for identity,action in host.actions.items():
+                    if identity in self.action_bindings and not (key=='revision' and identity in {'undo','redo'}):action.setEnabled(self.action_bindings[identity].isEnabled())
 
     def set_project(self, project, store):
         if self.active or self.busy:
@@ -1707,6 +1724,7 @@ class MainWindow(QMainWindow):
             self.flush_save()
             self.word_editor.close_document()
             self.builder_preview.clear_document()
+            if hasattr(self,'workspaces'):self.workspaces.close()
             # Windows holds each preview file open until its document closes.
             from PySide6.QtPdf import QPdfDocument
             for document in self.findChildren(QPdfDocument):

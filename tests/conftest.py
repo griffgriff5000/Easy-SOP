@@ -23,6 +23,12 @@ def qt_application():
     app.sendPostedEvents(None,QEvent.Type.DeferredDelete)
 
 @pytest.fixture(autouse=True)
+def isolate_workspace_layouts(monkeypatch,tmp_path):
+    from sop_capture.workspace_layouts import LayoutLibrary
+    monkeypatch.setattr('sop_capture.ui.workspace_setup.LayoutLibrary',lambda path:LayoutLibrary(tmp_path/'workspace-layouts.json'))
+
+
+@pytest.fixture(autouse=True)
 def finish_qt_deferred_cleanup(qt_application):
     yield
     # Unit tests do not run QApplication.exec(); service deferred widget/document

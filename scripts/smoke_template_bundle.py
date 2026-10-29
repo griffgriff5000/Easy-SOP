@@ -132,13 +132,21 @@ assert any(e['kind']=='page' for e in pdf_elements)
 revision=RevisionWorkspace.create(root/'revision-workspace',root/'edited.docx',root/'source.docx','B')
 element=next(e for e in revision.elements if e['kind']=='text' and e['text'])
 revision.approve(element['id'],'end',text='Approved revision transfer')
-review=RevisionPage(None);review.bind(revision);review.resize(1200,850);review.show();app.processEvents()
+from sop_capture.ui.main_window import MainWindow
+from sop_capture.workspace_layouts import LayoutLibrary
+from sop_capture.recent_projects import RecentProjects
+from sop_capture.designs import AnnotationLibrary
+window=MainWindow(TemplateLibrary(root/'revision-library'),RecentProjects(root/'revision-recent.json'),AnnotationLibrary(root/'revision-annotations'),LayoutLibrary(root/'revision-layouts.json'))
+review=window.revision_page;review.bind(revision);window.show_page(7);window.resize(1300,900);window.show();review.right_tabs.setCurrentIndex(3);app.processEvents()
 draft=build_document(revision,root/'revision-draft.docx')
 review.word_editor.open_document(draft,None,None,'')
 selection=review.word_editor.session.document.ActiveWindow.Selection
 selection.EndKey(6);selection.TypeText('\\rRevision native editing preserved.')
 review.word_editor.save_document();assert revision.state['authored']
-review.close_session();review.close();app.processEvents()
+window.workspaces.hosts['revision'].panels['properties'].setFloating(True);app.processEvents()
+window.show_page(5);app.processEvents();assert not window.workspaces.hosts['revision'].panels['properties'].isVisible()
+window.show_page(7);app.processEvents();review.word_editor.save_document()
+assert window.close();app.processEvents()
 result=build_document(revision,root/'revision-B.docx')
 assert any('Revision native editing preserved.' in p.text for p in Document(result).paragraphs)
 (root/'revision-passed.txt').write_text('passed')

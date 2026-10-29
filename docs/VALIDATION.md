@@ -1,5 +1,13 @@
 # Verification — 26 October 2026
 
+## Personal workspaces — 29 October 2026
+
+- Full automated suite: **218 passed**, exit 0. New coverage checks independent persistence, named layouts, role-compatible copying, shared unchecked toolbar actions, screen-specific command retention, corrupt preferences/native-state fallback, floating-panel navigation, lock/reset, shortcut rebinding, workspace customisation and navigation when preference writes fail.
+- `scripts/verify_workspace.py`, `scripts/verify_revision.py` and `scripts/verify_custom_workspaces.py` generated light/dark workspace and customisation-dialog captures. Screen layouts were inspected at 1000, 1280/1320 and 1440 pixels; narrow review controls scroll while approval controls remain accessible. Floating properties, copying presets, navigation and reset were exercised with isolated preferences.
+- Independent review found a shared-toolbar visibility copy issue; available-action catalogues and a failing-then-passing regression resolved it. Per-screen catalogues prevent unrelated SOP commands appearing in document review after copying. Reviewer reported no remaining important issue.
+- PyInstaller build and packaged startup: exit 0. Frozen SOP/template DOCX/PDF, native Word editor, revised-document transfer and edited export checks passed. Extended smoke verification embeds Word in the actual dock workspace, floats its properties/editor panel, switches to Home and back, saves and closes successfully.
+- Layout preferences are local UI state, separate from documents and projects. Exact native state is used on the originating screen; cross-screen copying uses compatible panel roles/actions, retains destination-only tools and clamps floating windows to an available display.
+
 ## Assisted document revision — 29 October 2026
 
 - Full automated suite: **207 passed**, exit 0. Focused revision coverage includes ordered Word imports, tables/artwork, numbered lists, immutable inputs, approvals/undo/reopen, PDF tables/scans/manual transcription, exact authored-file preservation, revision metadata, invalid/local-only model responses, active-field rejection and PDF preview/lock cleanup.

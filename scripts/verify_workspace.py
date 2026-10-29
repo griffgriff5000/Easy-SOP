@@ -10,15 +10,16 @@ from sop_capture.ui.theme import stylesheet
 from sop_capture.ui.annotation_studio import AnnotationStudio
 from sop_capture.designs import AnnotationLibrary,new_design,new_layer
 from sop_capture.ui.shortcuts_dialog import ShortcutsDialog
+from sop_capture.workspace_layouts import LayoutLibrary
 
 def main():
     app=QApplication([]);out=Path('.superpowers/workspace');out.mkdir(parents=True,exist_ok=True)
     with TemporaryDirectory() as temp:
         root=Path(temp);shutil.copytree('demo/Permit Management',root/'project')
-        store=ProjectStore(root/'project');window=MainWindow();window.set_project(store.load(),store)
+        store=ProjectStore(root/'project');window=MainWindow(layout_library=LayoutLibrary(root/'layouts.json'));window.set_project(store.load(),store)
         window.builder_modes.setCurrentIndex(1);window.show()
         for dark in (False,True):
-            theme='dark' if dark else 'light';window.setStyleSheet(stylesheet(dark))
+            theme='dark' if dark else 'light';window._set_theme(dark)
             for width,height in ((1000,760),(1280,800),(1440,900)):
                 window.resize(width,height);app.processEvents()
                 for page,name in enumerate(('capture','editor','document','settings','templates')):

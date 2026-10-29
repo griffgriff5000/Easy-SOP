@@ -6,6 +6,28 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QListWidget, QT
 
 
 TOPICS = {
+    "Document builder": """<h1>Edit directly on the document</h1>
+<p>Open <b>Document &gt; Builder &gt; Edit document</b>, then click and type on the pages. Installed desktop Microsoft Word provides the editor inside the centre pane. You can change text, remove template instructions, edit tables and images, and use Word styles and formatting.</p>
+<p>Use Word's ribbon, right-click menus and shortcuts, or the Save/Undo/Redo/B/I/U controls. Ctrl+F1 collapses the ribbon for more page space. Changes save into the project every five seconds, before exports, switching projects and closing. Word and PDF exports retain your direct edits. PDF export of edited documents requires desktop Word.</p>
+<p><b>Source / preview</b> contains the Fields, Template text and Information controls and a read-only PDF preview. Once you edit the document directly, source changes and new captured steps do not overwrite it. Choose <b>Rebuild from captured steps</b> to regenerate from the current template and source. This replaces manual document edits after confirmation; project Undo can restore the previous version.</p>
+<p>The original template stays unchanged. If saving fails, keep the app open and retry; the working-copy path is shown in the editor. Without desktop Word you can still use source controls, DOCX generation and Standard/custom PDF export for documents without direct edits.</p>""",
+    "Workspace layout": """<h1>A consistent workspace</h1>
+<p>Use the sidebar to switch pages. File, Edit and View menus contain the main commands with your configured shortcuts. Secondary actions are in labelled menus beside the area they affect.</p>
+<ul><li><b>Step editor:</b> steps at left, screenshot in the centre, Instructions and Annotation tabs at right. Details hides that inspector. Actions contains duplication, ordering and grouping. Screenshot contains replace/retake/PNG export. Export offers PDF and Word.</li>
+<li><b>Annotation Studio:</b> drawing rail at left; Properties, Layers and Library tabs at right. Expand Position and size for exact transforms. Layers &gt; Arrange contains grouping/stacking; File contains import/export; Library contains saved designs and canvas dimensions.</li>
+<li><b>Document:</b> Details, Procedure, Control and Branding tabs. Review links open the correct tab.</li>
+<li><b>Settings:</b> Capture, Annotations, Files and defaults, and Appearance tabs.</li>
+<li><b>Templates:</b> choose a catalogue entry, then edit Details and Appearance/Word styles. New template contains creation and import; More contains Save as new and Delete.</li></ul>
+<p>Both canvases have Fit and zoom controls. Middle-drag pans while zoomed; choosing Fit recentres the view. The same spacing, controls and light/dark colours are used throughout.</p>""",
+
+    "Annotation Studio": """<h1>Draw and reuse your own annotations</h1>
+<p>Open <b>Annotation Studio...</b> in the Step editor or the Settings menu. Choose a drawing tool, then drag on the checkerboard. Use Freehand to draw a stroke. The preview becomes a new layer when you release; Esc cancels the current gesture.</p>
+<p>Select and drag elements to move them. Use the white corner handle to resize one layer, or enter exact X, Y, width, height and rotation. Properties control fill, outline, opacity, font, text and arrow heads. Standard Windows font families fall back to bundled Vera if unavailable.</p>
+<p>Ctrl selects multiple layers. Group combines selection for movement; Ungroup separates it. Forward/Backward controls stacking. Align, Duplicate, Delete, Visible and Locked work from the layers panel and properties. Undo/Redo changes the studio draft.</p>
+<p><b>Import artwork</b> accepts PNG, JPEG, WebP and static SVG. Imported artwork is an image layer; SVG paths are flattened on import. External resources and active SVG content are unsupported. Use PNG for unsupported SVGs.</p>
+<p>Name and <b>Save</b> the design to your local library; <b>Save as new</b> makes a separate entry. Export/import editable <b>.sopannotation</b> packs to share studio layers and embedded artwork. Export transparent PNG for use elsewhere. Designs support up to 100 layers on a 2048 by 2048 canvas.</p>
+<p><b>Use design on step</b> arms drag placement on the screenshot. Select an existing annotation using Edit annotations and reopen the studio to customise it; Use design replaces it. Closing or discarding leaves the SOP unchanged. Placed designs are independent copies, so library edits or deletion do not alter saved SOPs. Saved designs are available across every project. You can also select an annotation on a screenshot and choose <b>Save selected to library</b> to name a reusable copy; each later placement remains independent. Redactions and blur remain in the screenshot editor and cover custom designs on export.</p>""",
+
     "Callouts, sections and review": """<h1>Make longer procedures easier to follow</h1>
 <p><b>Text callout:</b> select Text callout in the annotation dropdown, enter the label, then drag from the button or field to the label position. Adjust colour, stroke and text size. Use Edit annotations to move the target handle or drag the label independently. A live preview appears while dragging.</p>
 <p><b>Sections:</b> enter a section name below a step title, or choose Group steps and select a first and last step. Rename section changes every step using that name. Blank names remove grouping. Section headings appear in the list and PDF/Word exports; step numbering stays continuous. New steps inherit the selected section.</p>
@@ -14,12 +36,12 @@ TOPICS = {
     "Getting started": """<h1>Create your first SOP</h1>
 <p>SOP Capture Studio turns screenshots of a process into an editable procedure and a PDF.</p>
 <ol>
-<li>On <b>Capture</b>, choose <b>New SOP</b>, enter a title and choose where to save the project.</li>
+<li>On <b>Capture</b>, choose <b>New SOP</b>, enter a title, choose a saved template and choose a parent folder. A fresh SOP subfolder is created automatically; repeated titles get numbered folders.</li>
 <li>Choose <b>Refresh windows</b>, select the application you want to document and use <b>Preview selection</b> to check the screenshot.</li>
 <li>Choose <b>Start capture</b>. The main window minimises and floating capture controls appear.</li>
 <li>Perform the process in your selected application. Clicks create steps automatically.</li>
 <li>Choose <b>Stop</b> on the floating controls. Add instructions in the <b>Step editor</b>.</li>
-<li>Complete the <b>Document</b> details, choose <b>Preview PDF</b>, then <b>Export PDF</b>.</li>
+<li>Complete the <b>Document</b> details, choose <b>Preview</b>, then <b>Export &gt; Export PDF</b>.</li>
 </ol>
 <p>Your work is saved automatically. Use <b>Open SOP</b> to continue a saved project later.</p>
 <p>Select a topic on the left for more detail. This guide works without an internet connection.</p>
@@ -51,7 +73,7 @@ TOPICS = {
 """,
     "Annotations": """
 <h1>Annotate a screenshot</h1>
-<p>Choose a tool above the screenshot, drag to see a <b>live preview</b>, then release to place it. Press <b>Esc</b> while dragging to cancel.</p>
+<p>Choose an icon under <b>Default annotations</b> or <b>Custom annotations</b> in the right-hand Annotation panel, or use the toolbar selector. Hover for names. Drag to see a <b>live preview</b>, then release to place it. Press <b>Esc</b> while dragging to cancel.</p>
 <ul>
 <li><b>Arrow:</b> the <b>Arrow style</b> dropdown shows pictures of solid, open-head and double-headed arrows.</li>
 <li><b>Straight line</b>, <b>Circle / ellipse</b> and <b>Outline box</b> mark areas or connections.</li>
@@ -59,9 +81,10 @@ TOPICS = {
 <li><b>Text label:</b> enter your label, choose a text size and drag a box. Text wraps inside it; enlarge the box or reduce the font if text is clipped.</li>
 <li><b>Solid redaction</b> covers an area with opaque black. <b>Blur</b> softens an area; use solid redaction for information that must be unreadable.</li>
 </ul>
+<p><b>Magnifier:</b> choose its icon under Default annotations and draw a box. The screenshot under its centre is enlarged inside the box, leaving the rest unchanged. Adjust Magnification (1.25x?5x), border colour and stroke. Select/edit moves or resizes it; Esc cancels a preview. The original file is unchanged, and generated PNG/Word/PDF screenshots include the lens. Source redactions are preserved when sampling.</p>
 <p>Set <b>Colour</b> and <b>Stroke</b> thickness before drawing. Sizes are measured in original screenshot pixels, so appearance depends on the preview scale.</p>
 <h2>Change an existing annotation</h2>
-<p>Choose <b>Edit annotations</b>, then click a shape. Drag its body to move it or drag a square handle to resize it/change an arrow endpoint. The toolbar edits the selected shape. With no shape selected, settings apply to new shapes.</p>
+<p>Choose <b>Select / edit</b>, then click a shape. Drag its body to move it or drag a square handle to resize it/change an arrow endpoint. The toolbar edits the selected shape. With no shape selected, settings apply to new shapes.</p>
 <p><b>Delete selected</b> removes the selected shape; <b>Remove last annotation</b> removes the most recently added one. Undo and redo cover placement, styling, moving and deletion.</p>
 <h2>Click markers</h2>
 <p>Choose <b>Move click marker</b> and click its new position. The Click marker checkbox hides/shows it; Remove marker deletes it. Change marker colour, radius and numbering on the Document page.</p>
@@ -71,8 +94,8 @@ TOPICS = {
 <h1>Prepare and export your document</h1>
 <p>Use <b>Document</b> to set the SOP title, company, reference, version, author, reviewer, approver and status. Add a company logo, purpose, scope, prerequisites and revision history.</p>
 <p>Created can be edited; Last updated is maintained when the project is saved. Approved is a document label, not an electronic approval workflow.</p>
-<p>Choose portrait or landscape. On Step editor, use <b>Preview PDF</b> to review the cover, instructions, screenshots, markers, redactions and page breaks. Close the preview to return to editing.</p>
-<p><b>Export PDF</b> lets you choose a filename and destination, with Exports as the default folder. Confirm before replacing an existing PDF.</p>
+<p>Choose portrait or landscape. On Step editor, use <b>Preview</b> to review the cover, instructions, screenshots, markers, redactions and page breaks. Close the preview to return to editing.</p>
+<p><b>Export &gt; Export PDF</b> lets you choose a filename and destination, with Exports as the default folder. Confirm before replacing an existing PDF.</p>
 <p>Check sensitive information before sharing. Exported screenshots include flattened annotations and redactions, but original screenshots in the editable project remain unredacted.</p>
 """,
     "Saving and recovery": """
@@ -91,14 +114,14 @@ TOPICS = {
 """,
     "Templates": """
 <h1>Choose or design a document template</h1>
-<p>Open <b>Templates</b> in the sidebar. The library contains Standard SOP, named custom PDF layouts and uploaded Word documents.</p>
+<p>Open <b>Templates</b> in the sidebar. The library contains Standard SOP, named custom PDF layouts and uploaded Word documents. Save/upload a template once and reuse it for any number of projects. New SOP lets you choose a library entry, then creates a new project folder with a separate template copy. Project-specific edits do not change the library or other projects.</p>
 <h2>Create a custom layout</h2>
 <ol><li>Choose <b>New custom template</b> and enter a name.</li><li>Choose a logo, company default, fonts, sizes, colours, margins, screenshot width, cover and page-break preferences. Header/footer text can use {title}, {reference}, {version} and {company}.</li><li><b>Save changes</b> adds it to the list. Use <b>Save as new template</b> with a different name for a variant.</li><li>Open an SOP, select an entry and choose <b>Apply selected template to SOP</b> or <b>Apply and preview PDF</b>.</li></ol>
 <p>An SOP's existing company text takes priority over the template default. Template orientation overrides Document unless set to project. Header/footer space is reserved even with small margins.</p>
 <h2>Upload a company Word template</h2>
-<p>Choose <b>Upload Word template</b>, select a .docx file and give it a name. Map its detected paragraph styles to step titles, instructions and captions, then save and apply it. Company fonts need to be installed on the exporting PC.</p>
-<p>Prepare the document in Word with placeholders such as {{title}}, {{company}}, {{reference}}, {{version}}, {{author}}, {{purpose}}, {{scope}} and {{revision_history}}. Put <b>{{steps}}</b> alone in a body paragraph for repeating steps. Put <b>{{logo}}</b> alone in a paragraph for a logo override.</p>
-<p><b>Save example Word template</b> provides a ready-to-edit starting document. If an upload has no steps placeholder, import explains that generated content will be appended. The app does not automatically understand an arbitrary company form.</p>
+<p>Choose <b>New template &gt; Import Word template</b> and name the uploaded .docx. Company covers, tables, sections, branding, styles and linked content controls are retained. Recognised authoring guidance and style demonstrations are removed; Lorem ipsum sample prose is cleared. Unfamiliar company content stays intact. The original upload is unchanged.</p>
+<p>Use <b>Document &gt; Fill template fields</b> to work through labelled company table cells. <b>Next blank or placeholder</b> finds unfinished values. Recognised metadata opens Document details; custom values can be edited here. Complex controls offer <b>Edit on document</b>. Source edits apply on generation/rebuild; rebuilding confirms replacement of direct edits.</p>
+<p>Word refreshes contents and figure/table lists for previews/PDF and direct editing. Imported Word structure and data bindings are retained so repeated values remain connected. Existing template assets stay unchanged; re-upload a new version to adopt structured preparation. A previously cleared asset cannot recover its cover without re-uploading the original.</p>
 <p><b>Export Word</b> on Step editor saves DOCX. Word-template PDF preview/export requires installed desktop Microsoft Word. Standard/custom PDFs work without Word.</p>
 <h2>Existing SOPs keep their layout</h2>
 <p>Applying copies the template and assets into the SOP folder. Library edits/deletion do not change it. Apply again to use a newer version, or apply Standard SOP to return to the built-in layout.</p>
@@ -142,7 +165,7 @@ class UserGuideDialog(QDialog):
         self.setMinimumSize(720, 480)
         self.shortcut = "Ctrl+Shift+F8"
         outer = QVBoxLayout(self)
-        title = QLabel("How to use SOP Capture Studio")
+        title = QLabel("Help")
         title.setObjectName("heading")
         outer.addWidget(title)
         row = QHBoxLayout()
@@ -152,7 +175,7 @@ class UserGuideDialog(QDialog):
         self.topics.setWordWrap(True)
         self.browser = QTextBrowser()
         self.browser.setOpenExternalLinks(False)
-        self.browser.document().setDefaultStyleSheet("body {font-family: 'Segoe UI'; font-size: 11pt;} h1 {font-size: 20pt;} h2 {font-size: 13pt;} p, li {line-height: 145%;} li {margin-bottom: 8px;}")
+        self.browser.document().setDefaultStyleSheet("body {font-family: 'Segoe UI'; font-size: 10pt;} h1 {font-size: 18pt;} h2 {font-size: 12pt;} p, li {line-height: 145%;} li {margin-bottom: 8px;}")
         self.topics.currentTextChanged.connect(self._render)
         row.addWidget(self.topics)
         row.addWidget(self.browser, 1)
@@ -169,5 +192,15 @@ class UserGuideDialog(QDialog):
         self._render(topic)
 
     def _render(self, topic):
-        self.browser.setHtml(TOPICS.get(topic, "").replace("{manual_shortcut}", escape(self.shortcut)))
+        html = TOPICS.get(topic, "").replace("{manual_shortcut}", escape(self.shortcut))
+        if topic == "Keyboard shortcuts" and hasattr(self.parent(), "shortcut_profile"):
+            from ..shortcuts import ACTIONS
+            profile = self.parent().shortcut_profile
+            rows = [(key, ACTIONS[action][0]) for action, key in profile["bindings"].items() if key]
+            rows += [(row["shortcut"], row["name"]) for row in profile["sequences"] if row["shortcut"]]
+            html = "<h1>Current keyboard shortcuts</h1><table cellpadding='8'>"+"".join(
+                f"<tr><td><b>{escape(key)}</b></td><td>{escape(label)}</td></tr>" for key, label in rows)+"</table>"
+            html += "<p>Manual capture: <b>"+escape(self.shortcut)+"</b> (global, while recording).</p>"
+            html += "<p>Open Settings &gt; Customise shortcuts to assign keys, clear assignments, create ordered action sequences, or import/export a profile. Changes apply when you choose Apply. Restore defaults removes custom sequences. App shortcuts work while the studio is active; reserved text-editing keys stay available in text fields. Sequences stop if an action is unavailable. Esc cancels an annotation gesture.</p>"
+        self.browser.setHtml(html)
         self.browser.verticalScrollBar().setValue(0)

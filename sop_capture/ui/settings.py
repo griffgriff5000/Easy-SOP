@@ -1,8 +1,9 @@
 from pathlib import Path
 from PySide6.QtCore import QSettings, QStandardPaths
-from PySide6.QtWidgets import QWidget, QFormLayout, QSpinBox, QComboBox, QCheckBox, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
+from PySide6.QtWidgets import QWidget, QFormLayout, QSpinBox, QComboBox, QCheckBox, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QTabWidget
 
 from ..windows import parse_hotkey
+from .components import page_header, form_page, scroll_panel
 
 
 class SettingsPage(QWidget):
@@ -10,12 +11,15 @@ class SettingsPage(QWidget):
         super().__init__()
         self.settings = QSettings("SOPCaptureStudio", "SOPCaptureStudio")
         outer = QVBoxLayout(self)
-        heading = QLabel("Settings")
-        heading.setObjectName("heading")
-        outer.addWidget(heading)
-        form = QFormLayout()
-        form.setVerticalSpacing(12)
-        outer.addLayout(form)
+        page_header(outer,"Settings","Capture preferences, document defaults and appearance.")
+        self.actions = QHBoxLayout();outer.addLayout(self.actions)
+        self.categories = QTabWidget();outer.addWidget(self.categories,1)
+        self.category_indices = {}
+        forms = {}
+        for name in ("Capture","Annotations","Files and defaults","Appearance"):
+            page,category_form = form_page();forms[name] = category_form
+            self.category_indices[name] = self.categories.addTab(scroll_panel(page),name)
+        form = forms["Capture"]
         self.fields = {}
         self._spin(form, "delay", "Capture delay (ms)", 0, 5000, 400)
         self._combo(form, "timing", "Click timing", ["After click", "Recent pre-click frame"])
@@ -23,9 +27,11 @@ class SettingsPage(QWidget):
         self._text(form, "shortcut", "Manual capture shortcut", "Ctrl+Shift+F8")
         self._spin(form, "compression", "PNG lossless compression (0–9)", 0, 9, 6)
         self._check(form, "initial", "Capture initial screen", True)
+        form = forms["Annotations"]
         self._text(form, "marker_color", "Marker / highlight colour", "#ef4444")
         self._spin(form, "marker_size", "Marker radius (image pixels)", 5, 150, 24)
         self._check(form, "marker_numbers", "Show step numbers", True)
+        form = forms["Files and defaults"]
         self._text(form, "company", "Default company", "")
         self._text(form, "author", "Default author", "")
         self._text(form, "prefix", "SOP reference prefix", "SOP")
@@ -33,10 +39,14 @@ class SettingsPage(QWidget):
         self._combo(form, "orientation", "PDF orientation", ["portrait", "landscape"])
         default = str(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)) / "SOP Capture Studio")
         self._text(form, "location", "Default project directory", default, browse=True)
+        form = forms["Appearance"]
         self._combo(form, "theme", "Appearance", ["Light", "Dark"])
         self.fields["theme"].currentTextChanged.connect(lambda text: on_theme(text == "Dark"))
         outer.addWidget(QLabel("Privacy: selected window only • local processing • explicit recording only.\nScreenshots may contain visible sensitive information. Review and redact before export."))
-        outer.addStretch()
+
+
+    def show_category(self, name):
+        self.categories.setCurrentIndex(self.category_indices[name])
 
     def value(self, name):
         widget = self.fields[name]

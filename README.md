@@ -2,6 +2,27 @@
 
 A local Windows desktop application for recording a selected application's mouse interactions, editing illustrated procedure steps and exporting an A4 SOP PDF. Python 3.12+, PySide6, Pillow and ReportLab. No cloud service, API key or account is required.
 
+## Workspace
+
+The app uses a shared layout and light/dark theme across all screens. File, Edit and View menus provide the main commands and show your configured shortcuts.
+
+- **Step editor:** thumbnails on the left, screenshot in the centre, and **Instructions / Annotation** tabs on the right. **Details** hides the inspector for more canvas space. Use **Actions** for duplication, ordering and grouping; **Screenshot** for image replacement/retake/PNG export; **Export** for PDF or Word. Relevant annotation properties appear for the active tool or selected item.
+- **Annotation Studio:** drawing tools on the left, canvas in the centre, and **Properties / Layers / Library** tabs on the right. **Position and size** expands precise transforms. **Layers > Arrange** contains grouping and stacking. **File** contains artwork/pack import and design export. Saved designs and canvas dimensions are on **Library**.
+- **Document:** Builder, Details, Procedure, Control and Branding categories. Review checklist links reveal the relevant category automatically.
+- **Settings:** Capture, Annotations, Files and defaults, and Appearance categories. Shortcut and studio launch buttons are at the top.
+- **Templates:** catalogue at left, Details and Appearance/Word styles at right. Use **New template** for custom/Word imports, **More** for Save as new/Delete, and **Apply template** or **Apply and preview**.
+- Both canvases have **Fit / zoom** controls. Middle-drag pans a zoomed canvas; choosing Fit recentres it.
+
+### Direct document editor
+
+Open **Document > Builder > Edit document** to click and type directly in the company document, with captured SOP steps already inserted. This uses **installed desktop Microsoft Word** inside the centre pane, retaining Word's layout, styles, tables, images, headers and footers. Use Word's ribbon, right-click menus and keyboard shortcuts, or the Save/Undo/Redo/B/I/U controls above the document. Collapse Word's ribbon with Ctrl+F1 for more page space.
+
+The editable document is a separate working copy. Changes save into the project every five seconds and before export, switching projects or closing. DOCX and PDF exports use this saved edited document. PDF export of a directly edited document requires desktop Word, including documents initially built with Standard SOP. Original company templates and library files remain unchanged.
+
+**Source / preview** retains the Fields, Template text and Information controls, plus the read-only PDF preview. These source controls and captured steps do not overwrite a directly edited document. To incorporate later source changes, choose **Rebuild from captured steps** and confirm replacement of manual document edits. Project Undo can restore the previous saved version; use the editor's Undo/Redo buttons for native Word edits.
+
+On PCs without desktop Word, the editor shows an unavailable message. Source controls, DOCX generation and Standard/custom PDF export remain available until a directly edited document is saved.
+
 ## Run on Windows
 
 Use a **short virtual-environment path**. Qt's installation includes long filenames that can exceed Windows' path limit when the environment is inside a deeply nested OneDrive checkout.
@@ -20,7 +41,7 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 
 Open **Help → User guide** or press **F1** in the application for the built-in, offline guide. Topics cover the full workflow, annotations, saving/recovery, settings and troubleshooting. **Help → Keyboard shortcuts** lists shortcuts including your currently configured manual-capture key. The Help menu also provides Open logs and About.
 
-1. Select **New SOP**, enter a title and choose a project parent directory; or open an existing `project.json`.
+1. Select **New SOP**, enter a title, choose a saved template and choose the parent directory. The app creates a fresh `SOP - <title>` folder; repeated titles get `(2)`, `(3)`, etc. Or open an existing `project.json`.
 2. Refresh the application list, select the target window and use **Preview selection** to confirm its capture support.
 3. Enable Windows Do Not Disturb manually if required. The application links to notification settings and does not change them.
 4. Select **Start capture**, perform actions in the selected window and use the floating **Pause / Resume / Stop** controls. Default: left-click release followed by a 400 ms delay. **Ctrl+Shift+F8** takes a manual screenshot while the selected target is foreground. Shortcut conflicts are reported; change the shortcut in Settings.
@@ -45,6 +66,14 @@ Settings control delay, before/after-click timing, mouse buttons, global shortcu
 
 Open **Templates** to choose **Standard SOP**, a named custom layout, or an uploaded Word template. Select an entry and choose **Apply selected template to SOP**. Step editor shows the current template; PDF preview/export use that selection.
 
+**Word uploads preserve company structure.** Upload a company `.docx` and give it a name. The app detects company styles, keeps covers, company tables, section layouts, headers, footers, logos and Word content controls, and removes recognised guidance/style demonstration sections. Lorem ipsum example prose is cleared; unknown content is retained. The SOP is inserted at an existing steps marker or where recognised guidance was removed, otherwise appended. Original uploads remain unchanged; no remote AI service is used.
+
+Choose **Document > Fill template fields** for labelled company table values and **Next blank or placeholder**. Recognised title, reference, revision, prepared/checked/approved-by values use Document details; company-specific fields remain editable. Word content-control bindings repeat filled values on the cover and in tables. Complex/protected values offer **Edit on document**. Source values are applied when generating/rebuilding; existing direct edits are never replaced silently. Word refreshes contents and figure/table lists for preview/PDF and the embedded editor. DOCX marks these fields for refresh when opened in Word.
+
+New structured preparation does not change existing library assets or already authored documents. Re-upload and apply a new version to recover structure lost by an earlier cleared template. Applying/rebuilding confirms replacement of direct edits. Fonts must be installed on the exporting PC.
+
+
+
 **New custom template** starts from Standard SOP. Set a name, logo, company default, font preset, text sizes, colours, margins/orientation, cover, screenshot width and page-per-step preference. Header/footer text supports `{title}`, `{reference}`, `{version}` and `{company}`. Save changes adds it to the list; Save as new with a different name creates a variant. Existing SOP company text takes priority over the template default. Small margins still reserve header/footer space.
 
 **Upload Word template** keeps a `.docx` document's styles, tables, page layout, logos, headers and footers. Map its detected paragraph styles to generated step titles, instructions and captions. Fonts need to be installed on the exporting PC; the app cannot infer intended style mappings or reproduce unavailable fonts exactly.
@@ -60,13 +89,23 @@ Prepare the document once using these placeholders:
 | `{{steps}}` | Repeated titles, annotated screenshots, instructions and notes |
 | `{{logo}}` | Optional logo override |
 
-Put `{{steps}}` **once, alone in a body paragraph outside tables/headers**. Put `{{logo}}` alone in its own paragraph. Other text placeholders work in ordinary paragraphs, tables and headers/footers, including placeholders Word splits across text runs. Without a steps anchor, import explicitly offers to append generated SOP content. No automatic mapping of arbitrary company forms is claimed. Macro documents, embedded active objects, externally linked assets and active/external Word fields are unsupported. Ordinary hyperlinks are retained. Imported originals are not modified.
+Put `{{steps}}` **once, alone in a body paragraph outside tables/headers**. Put `{{logo}}` alone in its own paragraph. Other text placeholders work in ordinary paragraphs, tables and headers/footers, including placeholders Word splits across text runs. These marker rules apply to existing structured templates. New uploads remove recognised guidance while retaining company structures, and do not require a steps marker. No automatic mapping of arbitrary company forms is claimed. Macro documents, embedded active objects, externally linked assets and active/external Word fields are unsupported. Ordinary hyperlinks are retained. Imported originals are not modified.
 
 **Save example Word template** creates a prepared file to edit. **Export Word** on Step editor saves DOCX. **Word-template PDF preview/export requires installed desktop Microsoft Word**; Standard/custom PDF export works independently. Both formats use flattened, current redactions. Imported Word documents keep their own page design; custom PDF appearance controls do not restyle them.
 
-The library is stored in local user application data. Applying copies a snapshot and assets into the project's `Templates/` folder: later library edits/deletion do not change an existing SOP, and moving the complete folder retains its layout. Apply again to adopt a newer library version. Existing projects without a selection use Standard SOP. Reopen updated projects with the updated app. Deleted library entries may retain their old assets to protect other open editors.
+Templates belong to the application library and can be reused across multiple projects. New SOP offers the saved library entries before creating the project. Each project receives its own template copy, screenshots, edited document and exports in a separate folder. The library is stored in local user application data. Applying copies a snapshot and assets into the project's `Templates/` folder: later library edits/deletion do not change an existing SOP, and moving the complete folder retains its layout. Apply again to adopt a newer library version. Existing projects without a selection use Standard SOP. Reopen updated projects with the updated app. Deleted library entries may retain their old assets to protect other open editors.
 
 Projects saved with a template use schema version 2, preventing older app versions from silently discarding the selected layout. Version-1 projects still open in this app; a previous valid project file is retained as backup when saved.
+
+### Magnifier box
+
+Choose **Magnifier** in Default annotations or the toolbar, then drag a rectangle over the detail to enlarge. The centre underneath the box is magnified inside it; the rest of the screenshot keeps its size and pixels. Set **Magnification** from 1.25x to 5x (default 2x), plus border colour/stroke. Preview appears while dragging; Esc cancels. Select/edit lets you move, resize or delete the lens, with Undo/Redo support.
+
+The source screenshot file is unchanged. Magnification is rendered into annotated PNGs and generated Word/PDF screenshots. Redactions/blur are applied to sampled pixels first, so zooming does not copy hidden source content elsewhere. Other annotations remain independent. Projects containing a magnifier use schema 8; older project schemas still open in this version. Magnifiers stay in the screenshot editor because they depend on screenshot pixels, rather than reusable studio artwork.
+
+### Quick annotation selection
+
+In **Step editor > Annotation** on the right, the icon gallery shows **Default annotations**, then a divider and **Custom annotations**. Click a default tool or saved design, then drag on the screenshot to place it. Hover over icons for names; the selected icon is highlighted. Custom designs refresh when the panel opens, with its refresh button, and after the studio closes. Use Annotation Studio to create/edit and save designs. The toolbar selector stays synchronised with default gallery tools; gallery columns wrap to the panel width. Custom annotations belong to the app library and are available across all projects. To keep an annotation already drawn on a screenshot, select it and choose **Save selected to library**, then give it a name. Each placement embeds an independent copy; editing or deleting a library entry does not alter existing SOPs. Magnifiers, blur and redaction remain built-in screenshot tools.
 
 ## Privacy and capture limitations
 
@@ -142,3 +181,24 @@ The project uses the repository's MIT licence. Dependencies retain their own lic
 - Choose **Text callout**, type a label, then drag from its target to the label position. Use **Edit annotations** to move either end; colour, stroke and text size are adjustable.
 - Enter a **Section / stage** on a step or use **Group steps...** for a range. **Rename section...** updates all matching steps. PDF and Word include section headings with continuous step numbering.
 - **Review SOP** flags missing document details, instructions and screenshots. Select an item to fix it. Export checks the draft and offers **Export anyway** for intentional omissions.
+
+### Custom shortcuts and action sequences
+
+Open **Settings > Customise shortcuts** (also on the Settings page). Search for an action, click its shortcut box and press a key combination. Clear the box to disable a shortcut. Choose **Apply** to save and activate changes.
+
+The **Action sequences** tab lets you create a named sequence, add editor actions, reorder them with Up/Down and assign one shortcut. For example: **Add step**, then **Tool: Text callout**. Sequences stop when an action is unavailable. They support editor actions; dialogs, recording controls and asynchronous exports are available as individual shortcuts. Shortcuts operate within SOP Capture Studio. The global manual-capture shortcut remains in capture settings.
+
+Import/export JSON profiles to share a setup. Imports are validated and staged until Apply. Duplicate assignments and manual-capture conflicts are rejected. Restore defaults resets bindings and removes sequences. Help displays the current assigned keys.
+
+### Annotation Studio
+
+Open **Annotation Studio...** in the Step editor, or **Settings > Annotation Studio...** to work on your library without an SOP.
+
+- Draw rectangles, ellipses, triangles, diamonds, arrows, lines, text and freehand strokes. The checkerboard shows transparency. Draw a shape to see a live preview, then release to add it; Esc cancels the gesture.
+- Select elements on the canvas or in the layers list. Ctrl selects multiple layers. Drag to move; use the white corner handle for single-layer resizing, or enter exact position and size. Set fill/outline colours, stroke thickness, arrow heads, opacity, rotation, font family, bold/italic and text. Fonts use standard Windows families or the bundled Vera preset; unavailable families fall back to Vera.
+- Duplicate, delete, align, reorder, group/ungroup, hide or lock layers. Undo/Redo operates within the studio. Locked elements keep their geometry until unlocked.
+- Import PNG, JPEG, WebP or static SVG artwork. Artwork is embedded as an image layer, with resizing, rotation and transparency controls. SVG artwork is rasterized on import; its internal vector paths are not separately editable. External SVG resources, active content and unsupported SVG elements are rejected; use a standalone PNG for those files.
+- Name and save designs in the local library; Save as new creates a separate entry. Export/import `.sopannotation` packs to share editable studio layers with their embedded artwork. Export transparent PNG for other applications.
+- Choose **Use design on step**, then drag on the screenshot to preview its placement and size. To customise an existing shape or custom design, select it with **Edit annotations** and reopen the studio. Apply replaces that annotation; closing/discarding keeps the SOP unchanged. Redaction and blur masks stay in the screenshot editor and are applied over custom artwork in exports.
+
+The library supports canvases up to 2048?2048 and up to 100 layers per design. Placed designs are embedded snapshots: moving original artwork or changing/deleting library entries does not change saved SOPs. Projects using custom designs require this version of SOP Capture Studio (schema 4).

@@ -5,7 +5,7 @@ from .storage import atomic_bytes
 
 
 def export_pdf(project, root, output):
-    if project.template.get("kind") != "docx": return standard_pdf(project, root, output)
+    if not project.document_file and project.template.get("kind") != "docx": return standard_pdf(project, root, output)
     from .word_export import export_docx, word_pdf
     with tempfile.TemporaryDirectory(prefix="sop-word-") as temporary:
         docx = export_docx(project, root, Path(temporary) / "procedure.docx")

@@ -3,7 +3,8 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget, QListWidgetItem,
-    QSplitter, QFormLayout, QLineEdit, QComboBox, QSpinBox, QCheckBox, QScrollArea, QFileDialog, QMessageBox, QInputDialog, QColorDialog, QGroupBox)
+    QSplitter, QFormLayout, QLineEdit, QComboBox, QSpinBox, QCheckBox, QScrollArea, QFileDialog, QMessageBox, QInputDialog, QColorDialog, QGroupBox, QTabWidget)
+from .components import page_header, menu_button, form_page, scroll_panel
 from ..templates import appearance
 from ..word_export import inspect_docx, create_example
 
@@ -15,93 +16,38 @@ class TemplatesPage(QWidget):
         self.loading, self.dirty = True, False
         self.current_id = None
         self.source_docx = None
-        layout = QVBoxLayout(self)
-        title = QLabel("Choose your document's layout.")
-        title.setObjectName("heading")
-        layout.addWidget(title)
-        self.active_label = QLabel("Current SOP: Standard SOP")
-        self.active_label.setWordWrap(True)
-        layout.addWidget(self.active_label)
+        layout = QVBoxLayout(self);layout.setSpacing(10)
+        page_header(layout,"Templates","Choose a company layout or customise the standard SOP.")
+        self.active_label = QLabel("Current SOP: Standard SOP");self.active_label.setObjectName("caption");self.active_label.setWordWrap(True)
         row = QHBoxLayout()
-        for text, action in (("New custom template", self.new_custom), ("Upload Word template…", self.import_word), ("Save example Word template…", self.example)):
-            row.addWidget(self._button(text, action))
-        row.addStretch()
-        layout.addLayout(row)
-        splitter = QSplitter()
-        self.catalogue = QListWidget()
-        self.catalogue.setWordWrap(True)
-        self.catalogue.currentItemChanged.connect(self._selected)
-        splitter.addWidget(self.catalogue)
-        editor = QWidget()
-        editor.setObjectName("scrollPage")
-        form_layout = QVBoxLayout(editor)
-        form = QFormLayout()
-        form.setVerticalSpacing(12)
-        self.name = QLineEdit()
-        self.name.setMaxLength(120)
-        self.name.textChanged.connect(self._edited)
-        form.addRow("Template name", self.name)
-        self.info = QLabel()
-        self.info.setWordWrap(True)
-        form.addRow(self.info)
-        self.logo = QLineEdit()
-        self.logo.textChanged.connect(self._edited)
-        logo_row = QHBoxLayout()
-        logo_row.addWidget(self.logo, 1)
-        logo_row.addWidget(self._button("Browse…", self.choose_logo))
-        logo_row.addWidget(self._button("Clear", self.logo.clear))
-        form.addRow("Default logo", logo_row)
-        self.fields = {}
-        self._text(form, "company", "Default company name")
-        self._spin(form, "image_width_percent", "Screenshot width (%)", 30, 100)
-        self._check(form, "page_per_step", "Start each step on a new page")
-        form_layout.addLayout(form)
-        self.pdf_group = QGroupBox("Standard / custom PDF appearance")
-        pdf = QFormLayout(self.pdf_group)
-        self._combo(pdf, "font", "Text font", ["Vera", "Helvetica", "Times-Roman", "Courier"])
-        self._spin(pdf, "body_size", "Body text (pt)", 7, 18)
-        self._spin(pdf, "heading_size", "Step headings (pt)", 10, 30)
-        self._spin(pdf, "title_size", "Cover title (pt)", 18, 44)
-        self._color(pdf, "heading_color", "Heading colour")
-        self._color(pdf, "text_color", "Body text colour")
-        self._spin(pdf, "margin_mm", "Page margin (mm)", 10, 35)
-        self._combo(pdf, "orientation", "Page orientation", ["project", "portrait", "landscape"])
-        self._check(pdf, "cover", "Include cover page")
-        self._text(pdf, "header", "Header text")
-        self._text(pdf, "footer", "Footer text")
-        note = QLabel("Header/footer may use {title}, {reference}, {version} and {company}. Document metadata and instructions remain on the Document and Step editor pages.")
-        note.setWordWrap(True)
-        pdf.addRow(note)
-        form_layout.addWidget(self.pdf_group)
-        self.word_group = QGroupBox("Word paragraph styles")
-        word = QFormLayout(self.word_group)
-        for key, label in (("heading_style", "Step title style"), ("body_style", "Instructions style"), ("caption_style", "Screenshot caption style")):
-            self._combo(word, key, label, [])
-        note = QLabel("Word templates keep their own fonts, margins, logos, headers and footers. Fonts must be installed on the exporting PC. Logo override uses a standalone {{logo}} placeholder. Word-template PDF preview/export requires desktop Microsoft Word; DOCX export does not.")
-        note.setWordWrap(True)
-        word.addRow(note)
-        form_layout.addWidget(self.word_group)
-        self.save_button = self._button("Save changes", self.save_changes)
-        self.save_as_button = self._button("Save as new template", lambda: self.save_changes(as_new=True))
-        self.delete_button = self._button("Delete from library", self.delete_selected)
-        buttons = QHBoxLayout()
-        for item in (self.save_button, self.save_as_button, self.delete_button): buttons.addWidget(item)
-        layout.addLayout(buttons)
-        form_layout.addStretch()
-        area = QScrollArea()
-        area.setWidgetResizable(True)
-        area.setWidget(editor)
-        splitter.addWidget(area)
-        splitter.setSizes([240, 750])
-        layout.addWidget(splitter, 1)
-        actions = QHBoxLayout()
-        self.apply_button = self._button("Apply selected template to SOP", self.apply_selected)
-        self.apply_button.setObjectName("primary")
-        self.preview_button = self._button("Apply and preview PDF", self.preview_selected)
-        actions.addWidget(self.apply_button)
-        actions.addWidget(self.preview_button)
-        actions.addStretch()
-        layout.addLayout(actions)
+        row.addWidget(menu_button("New template",[("Custom template",self.new_custom),("Import Word template...",self.import_word),("Save example Word template...",self.example)]))
+        self.save_button=self._button("Save",self.save_changes);row.addWidget(self.save_button)
+        manage=menu_button("More",[("Save as new template",lambda:self.save_changes(as_new=True)),("Delete from library",self.delete_selected)])
+        self.save_as_button,self.delete_button=manage.menu().actions();row.addWidget(manage);row.addStretch()
+        self.preview_button=self._button("Apply and preview",self.preview_selected);row.addWidget(self.preview_button)
+        self.apply_button=self._button("Apply template",self.apply_selected);self.apply_button.setObjectName("primary");row.addWidget(self.apply_button)
+        layout.addLayout(row);layout.addWidget(self.active_label)
+        splitter=QSplitter();self.catalogue=QListWidget();self.catalogue.setMinimumWidth(180);self.catalogue.setWordWrap(True);self.catalogue.currentItemChanged.connect(self._selected);splitter.addWidget(self.catalogue)
+        self.template_tabs=QTabWidget()
+        details,form=form_page();self.template_tabs.addTab(scroll_panel(details),"Details")
+        self.name=QLineEdit();self.name.setMaxLength(120);self.name.textChanged.connect(self._edited);form.addRow("Template name",self.name)
+        self.info=QLabel();self.info.setWordWrap(True);self.info.setObjectName("caption");form.addRow(self.info)
+        self.logo=QLineEdit();self.logo.textChanged.connect(self._edited)
+        logo_row=QHBoxLayout();logo_row.addWidget(self.logo,1);logo_row.addWidget(self._button("Browse...",self.choose_logo));logo_row.addWidget(self._button("Clear",self.logo.clear));form.addRow("Default logo",logo_row)
+        self.fields={};self._text(form,"company","Default company")
+        self._spin(form,"image_width_percent","Screenshot width (%)",30,100);self._check(form,"page_per_step","One step per page")
+        self.pdf_group,pdf=form_page();self.template_tabs.addTab(scroll_panel(self.pdf_group),"Appearance")
+        self._combo(pdf,"font","Font family",["Vera","Helvetica","Times-Roman","Courier"])
+        for key,label,lo,hi in [("body_size","Body text (pt)",7,18),("heading_size","Step headings (pt)",10,30),("title_size","Cover title (pt)",18,44)]:self._spin(pdf,key,label,lo,hi)
+        self._color(pdf,"heading_color","Heading colour");self._color(pdf,"text_color","Text colour")
+        self._spin(pdf,"margin_mm","Page margin (mm)",10,35);self._combo(pdf,"orientation","Orientation",["project","portrait","landscape"]);self._check(pdf,"cover","Include cover page")
+        self._text(pdf,"header","Header");self._text(pdf,"footer","Footer")
+        note=QLabel("Header/footer fields: {title}, {reference}, {version}, {company}.");note.setWordWrap(True);note.setObjectName("caption");pdf.addRow(note)
+        self.word_group,word=form_page();self.template_tabs.addTab(scroll_panel(self.word_group),"Word styles")
+        for key,label in [("title_style","Document title style"),("heading_style","Step title style"),("body_style","Instructions style"),("caption_style","Screenshot caption style")]:self._combo(word,key,label,[])
+        note=QLabel("Word templates retain their fonts, margins, logos, headers and footers. Fonts must be installed on this PC. Word-template PDF export requires desktop Microsoft Word; DOCX export does not.")
+        note.setWordWrap(True);note.setObjectName("caption");word.addRow(note)
+        splitter.addWidget(self.template_tabs);splitter.setSizes([220,800]);splitter.setStretchFactor(1,1);splitter.setCollapsible(0,False);splitter.setCollapsible(1,False);layout.addWidget(splitter,1)
         self.refresh()
 
     @staticmethod
@@ -185,13 +131,14 @@ class TemplatesPage(QWidget):
     def load_profile(self, profile):
         self.loading = True
         self.current_id = profile["id"]
+        self.prepared=profile.get('prepared',False)
         self.source_docx = self.library.asset(profile, "docx") if profile["kind"] == "docx" else None
         logo = self.library.asset(profile, "logo") if profile.get("logo") else None
         self.name.setText(profile["name"])
         self.logo.setText(str(logo) if logo else "")
         settings = appearance(profile["settings"])
         styles = inspect_docx(self.source_docx)["styles"] if self.source_docx else ["Heading 2", "Normal", "Caption"]
-        for key in ("heading_style", "body_style", "caption_style"):
+        for key in ("title_style", "heading_style", "body_style", "caption_style"):
             self.fields[key].clear()
             self.fields[key].addItems(styles)
         for key, field in self.fields.items():
@@ -202,7 +149,10 @@ class TemplatesPage(QWidget):
             else: field.setText(value)
         self.pdf_group.setVisible(not bool(self.source_docx))
         self.word_group.setVisible(bool(self.source_docx))
+        self.template_tabs.setTabVisible(1,not bool(self.source_docx))
+        self.template_tabs.setTabVisible(2,bool(self.source_docx))
         self.info.setText("Word layout. Known fields: {{title}}, {{company}}, {{reference}}, {{author}}, {{purpose}}, {{scope}}, {{steps}}, {{logo}} and other document metadata. Place {{steps}} alone in a body paragraph." if self.source_docx else "Adjust the standard SOP appearance, enter a new name and save it to your library.")
+        if self.prepared:self.info.setText('Company template prepared automatically. Covers, tables, section layout and styles are retained; recognised guidance and style examples are removed. Fill company values under Document > Builder > Source / preview > Template fields.')
         self.save_button.setEnabled(self.current_id != "standard")
         self.delete_button.setEnabled(self.current_id not in {None, "standard"})
         self.loading, self.dirty = False, False
@@ -214,6 +164,7 @@ class TemplatesPage(QWidget):
         self.current_id = None
         self.name.setText("My SOP template")
         self.save_button.setEnabled(True)
+        self.template_tabs.setCurrentIndex(0)
         self.name.selectAll()
         self.name.setFocus()
 
@@ -224,18 +175,14 @@ class TemplatesPage(QWidget):
     def save_changes(self, checked=False, as_new=False):
         try:
             identity = None if as_new or self.current_id == "standard" else self.current_id
-            profile = self.library.save(self.name.text(), self.values(), identity=identity, source_docx=self.source_docx, logo=self.logo.text() or None)
+            profile = self.library.save(self.name.text(), self.values(), identity=identity, source_docx=self.source_docx, logo=self.logo.text() or None,prepared=self.prepared)
             self.refresh(profile["id"])
             return profile
         except Exception as exc:
             QMessageBox.warning(self, "Cannot save template", str(exc))
 
     def import_path(self, path, name):
-        info = inspect_docx(path)
-        styles = info["styles"]
-        normal = "Normal" if "Normal" in styles else styles[0]
-        settings = {key: preferred if preferred in styles else normal for key, preferred in (("heading_style", "Heading 2"), ("body_style", "Normal"), ("caption_style", "Caption"))}
-        profile = self.library.save(name, settings, source_docx=path)
+        profile = self.library.save(name, {}, source_docx=path,prepare_word=True)
         self.refresh(profile["id"])
         return profile
 
@@ -244,9 +191,7 @@ class TemplatesPage(QWidget):
         path, _ = QFileDialog.getOpenFileName(self, "Upload Word template", "", "Word documents (*.docx)")
         if not path: return
         try:
-            info = inspect_docx(path)
-            if not info["has_steps"] and QMessageBox.question(self, "No steps placeholder", "This document has no standalone {{steps}} paragraph. Generated SOP content will be appended after its existing content. Continue? Add {{steps}} in Word first if you want to control placement.") != QMessageBox.StandardButton.Yes:
-                return
+            inspect_docx(path)
             name, accepted = QInputDialog.getText(self, "Name this template", "Template name:", text=Path(path).stem)
             if accepted: self.import_path(path, name)
         except Exception as exc: QMessageBox.warning(self, "Cannot import Word template", str(exc))

@@ -14,6 +14,7 @@ DEFAULT_APPEARANCE = {
     "image_width_percent": 100, "page_per_step": False, "cover": True,
     "header": "", "footer": "SOP Capture Studio", "company": "",
     "orientation": "project", "heading_style": "Heading 2", "body_style": "Normal", "caption_style": "Caption",
+    "title_style": "Title",
 }
 
 
@@ -29,7 +30,7 @@ def appearance(values=None):
         result[key] = "#%02x%02x%02x" % rgb[:3]
     for key in ("cover", "page_per_step"):
         if not isinstance(result[key], bool): raise ValueError(f"Invalid template {key}")
-    for key in ("header", "footer", "company", "heading_style", "body_style", "caption_style"):
+    for key in ("header", "footer", "company", "heading_style", "body_style", "caption_style", "title_style"):
         if not isinstance(result[key], str) or len(result[key]) > 500: raise ValueError(f"Invalid template {key}")
     if result["orientation"] not in {"project", "portrait", "landscape"}: raise ValueError("Invalid template orientation")
     return result
@@ -41,6 +42,7 @@ def validate_snapshot(value):
     if value.get("kind") not in {"standard", "custom", "docx"} or not isinstance(value.get("name"), str):
         raise ValueError("Invalid project template")
     appearance(value.get("settings", {}))
+    if not isinstance(value.get('prepared',False),bool):raise ValueError('Invalid template preparation setting')
     if value["kind"] == "docx" and not value.get("docx"): raise ValueError("Word template file is missing")
 
 
@@ -78,7 +80,7 @@ class TemplateLibrary:
             except (ValueError, OSError, TypeError): logging.getLogger(__name__).warning("An invalid template profile was skipped")
         return [standard_profile()] + sorted(profiles, key=lambda p: p["name"].casefold())
 
-    def save(self, name, settings, *, identity=None, source_docx=None, logo=None):
+    def save(self, name, settings, *, identity=None, source_docx=None, logo=None, prepare_word=False, prepared=False):
         name = name.strip()
         if not name or len(name) > 120: raise ValueError("Enter a template name of 1–120 characters")
         if any(p["name"].casefold() == name.casefold() and p["id"] != identity for p in self.list()):
@@ -86,10 +88,15 @@ class TemplateLibrary:
         old = self.load(identity) if identity else None
         identity = identity or uuid.uuid4().hex
         directory = self._directory(identity)
-        settings = appearance(settings)
+        prepared_payload=None
         if source_docx:
             from .word_export import inspect_docx
             inspect_docx(source_docx)
+            if prepare_word:
+                from .word_template import prepare_template
+                prepared_payload,learned=prepare_template(source_docx)
+                settings=learned | settings
+        settings = appearance(settings)
         assets = {}
         for key, source in (("docx", source_docx), ("logo", logo)):
             if source:
@@ -100,12 +107,23 @@ class TemplateLibrary:
                     data = BytesIO()
                     with Image.open(source) as image: image.convert("RGBA").save(data, "PNG")
                     payload = data.getvalue()
-                else: payload = Path(source).read_bytes()
+                else: payload = prepared_payload if prepared_payload is not None else Path(source).read_bytes()
                 atomic_bytes(directory / filename, payload)
                 assets[key] = filename
             else: assets[key] = None
         profile = {"id": identity, "name": name, "kind": "docx" if source_docx else "custom",
                    "version": old["version"]+1 if old else 1, "settings": settings, **assets}
+        if source_docx and (prepare_word or prepared or (old and old.get('prepared'))):
+            profile['prepared']=True
+            if prepare_word:
+                from .word_template import has_structure
+                profile['structured']=has_structure(prepared_payload);profile['preparation_version']=2
+            elif old:
+                for key in ('structured','preparation_version'):
+                    if key in old:profile[key]=old[key]
+            elif prepared:
+                from .word_template import has_structure
+                profile['structured']=has_structure(Path(source_docx).read_bytes());profile['preparation_version']=2
         atomic_bytes(directory / "profile.json", json.dumps(profile, ensure_ascii=False, indent=2).encode("utf-8"))
         return profile
 

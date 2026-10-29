@@ -19,6 +19,8 @@ class Annotation:
     font_size: int = 24
     opacity: int = 30
     arrow_style: str = "solid"
+    design: dict = field(default_factory=dict)
+    zoom: float = 2.0
 
 
 @dataclass
@@ -63,13 +65,21 @@ class Project:
     marker_numbers: bool = True
     steps: list[Step] = field(default_factory=list)
     template: dict = field(default_factory=dict)
+    company_information: str = ""
+    template_text_edits: dict = field(default_factory=dict)
+    document_file: str | None = None
+    document_source_key: str = ""
 
     def to_dict(self):
-        return asdict(self)
+        data=asdict(self)
+        for step in data['steps']:
+            for annotation in step['annotations']:
+                if annotation['kind']!='magnifier':annotation.pop('zoom',None)
+        return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or data.get("schema_version") not in (1, 2, 3):
+        if not isinstance(data, dict) or data.get("schema_version") not in (1, 2, 3, 4, 5, 6, 7, 8):
             raise ValueError("Unsupported project schema version")
         try:
             project = cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)} and k != "steps"})
@@ -85,10 +95,17 @@ class Project:
                     step.marker = tuple(step.marker)
                 step.annotations = [Annotation(**a) for a in row.get("annotations", [])]
                 for a in step.annotations:
-                    if a.kind not in {"callout", "arrow", "line", "text", "highlighter", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
+                    if a.kind not in {"magnifier", "design", "callout", "arrow", "line", "text", "highlighter", "circle", "highlight", "redact", "blur"} or len(a.points) != 4:
                         raise ValueError("Invalid annotation")
                     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in a.points):
                         raise ValueError("Invalid annotation coordinates")
+                    if isinstance(a.zoom,bool) or not isinstance(a.zoom,(int,float)) or not math.isfinite(a.zoom) or not 1.25<=a.zoom<=5:
+                        raise ValueError('Magnifier zoom must be between 1.25 and 5')
+                    if a.kind == "design":
+                        from .designs import validate_design
+                        a.design = validate_design(a.design)
+                    elif a.design:
+                        raise ValueError("Only custom annotations may contain a design")
                     ImageColor.getrgb(a.color)
                     if not isinstance(a.width, int) or not 1 <= a.width <= 30:
                         raise ValueError("Invalid annotation width")
@@ -122,6 +139,15 @@ class Project:
                 raise ValueError("Invalid document orientation or status")
             if not isinstance(project.marker_numbers, bool):
                 raise ValueError("Invalid marker numbering")
+            from .template_text import validate_edits
+            if project.document_file is not None and (not isinstance(project.document_file, str) or not project.document_file):
+                raise ValueError("Invalid document reference")
+            if not isinstance(project.document_source_key, str) or (project.document_source_key and (len(project.document_source_key) != 64 or any(c not in '0123456789abcdef' for c in project.document_source_key))):
+                raise ValueError("Invalid document source fingerprint")
+            validate_edits(project.template_text_edits)
+            if project.template_text_edits and project.template.get("kind")!="docx":raise ValueError("Template text edits require a Word template")
+            from .company_information import parse_information
+            parse_information(project.company_information)
             from .templates import validate_snapshot
             validate_snapshot(project.template)
             return project

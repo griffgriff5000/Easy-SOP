@@ -113,14 +113,27 @@ def replace_tokens(paragraph, values):
 
 
 def export_docx(project, root, output):
+    if project.document_file:
+        source = ProjectStore(root).resolve(project.document_file)
+        if source == Path(output).resolve():
+            raise ValueError("Choose a separate export file; the saved document is kept unchanged.")
+        atomic_bytes(output, source.read_bytes())
+        return Path(output)
     project = copy(project)
     settings = appearance(project.template.get("settings", {}))
     store = ProjectStore(root)
     source = project.template.get("docx")
+    prepared=bool(source and project.template.get('prepared'))
     if source:
         source_path = store.resolve(source)
+        if Path(output).resolve()==source_path.resolve():raise ValueError("Choose a separate export file; the original Word template is kept unchanged.")
         info = inspect_docx(source_path)
         document = Document(source_path)
+        from .template_text import apply_edits
+        apply_edits(document, source_path, project.template_text_edits)
+        if prepared:
+            from .word_template import fill_company_fields
+            fill_company_fields(document,project)
     else:
         document = Document()
         info = {"has_steps": False}
@@ -175,14 +188,19 @@ def export_docx(project, root, output):
         p.paragraph_format.keep_with_next = keep
         generated.append(p._p)
         return p
-    if not info["has_steps"]:
-        if source: paragraph().paragraph_format.page_break_before = True
+    structured=prepared and project.template.get('structured',False)
+    if not info["has_steps"] or (prepared and not structured):
+        if source and not prepared: paragraph().paragraph_format.page_break_before = True
         if project.company: paragraph(project.company, caption)
         if logo and not source:
             with Image.open(store.resolve(logo)) as image:
                 scale = min(1.8/image.width, .8/image.height)
                 paragraph().add_run().add_picture(str(store.resolve(logo)), width=Inches(image.width*scale), height=Inches(image.height*scale))
-        paragraph(project.title, "Title" if "Title" in styles else heading)
+        title_style=style('title_style',heading) if prepared else ("Title" if "Title" in styles else heading)
+        title_paragraph=paragraph(project.title,title_style)
+        if prepared:
+            from .word_template import unnumber
+            unnumber(title_paragraph)
         paragraph(f"{project.reference} | Version {project.version} | {project.status}\nAuthor: {project.author}")
         if settings["cover"] and not source:
             for label, value in (("Reviewer", project.reviewer), ("Approver", project.approver), ("Created", project.created[:10]), ("Updated", project.updated[:10])):
@@ -192,13 +210,23 @@ def export_docx(project, root, output):
             if value:
                 paragraph(label, heading, True)
                 paragraph(value)
+    from .company_information import word_information
+    from .company_fields import xp
+    preceding=anchor._p.getprevious() if anchor is not None else None
+    while preceding is not None and not ''.join(xp(preceding,'.//w:t/text()')).strip():preceding=preceding.getprevious()
+    existing_procedure=''.join(xp(preceding,'.//w:t/text()')).strip().casefold() if preceding is not None else ''
+    if structured and existing_procedure not in {'procedure','standard operating procedure','sop'}:
+        paragraph('Procedure',style('title_style',heading),True)
+    word_information(document, project.company_information, body, heading, generated)
     previous_section = ""
     for number, step in enumerate(project.steps, 1):
         section_heading = None
         if step.section and step.section != previous_section:
             section_heading = paragraph(step.section, heading, True)
         previous_section = step.section
-        title = paragraph(f"{number:02d}  {step.title}", heading, True)
+        from .word_template import numbered
+        step_text=step.title if prepared and numbered(document.styles[heading]) else f"{number:02d}  {step.title}"
+        title = paragraph(step_text, heading, True)
         if settings["page_per_step"]:
             (section_heading if section_heading is not None else title).paragraph_format.page_break_before = True
         if step.image:
@@ -214,7 +242,7 @@ def export_docx(project, root, output):
         paragraph(step.description)
         if step.notes: paragraph("Notes / warnings: "+step.notes)
     if not project.steps: paragraph("No procedural steps have been added.")
-    if not info["has_steps"] and project.revision_history:
+    if (not info["has_steps"] or (prepared and not structured)) and project.revision_history:
         paragraph("Revision history", heading, True)
         paragraph(project.revision_history)
     if anchor:
@@ -228,26 +256,15 @@ def export_docx(project, root, output):
 
 def word_pdf(docx_path, output):
     """Use a separate desktop Word automation instance; never attach to user docs."""
-    import pythoncom
-    from win32com.client import DispatchEx
-    pythoncom.CoInitialize()
-    word = document = None
+    from .word_session import WordSession
+    session = None
     try:
-        word = DispatchEx("Word.Application")
-        word.Visible = False
-        word.DisplayAlerts = 0
-        word.AutomationSecurity = 3
-        document = word.Documents.Open(str(Path(docx_path).resolve()), ConfirmConversions=False, ReadOnly=True, AddToRecentFiles=False, Visible=False)
-        document.ExportAsFixedFormat(str(Path(output).resolve()), 17)
+        session = WordSession(docx_path, visible=False, read_only=True)
+        session.document.ExportAsFixedFormat(str(Path(output).resolve()), 17)
     except Exception as exc:
-        raise RuntimeError("Word-template PDF export requires a working desktop Microsoft Word installation. You can export DOCX instead, or choose Standard/custom PDF. " + str(exc)) from exc
+        raise RuntimeError("Document PDF export requires a working desktop Microsoft Word installation. You can export DOCX instead. " + str(exc)) from exc
     finally:
-        try:
-            if document is not None: document.Close(False)
-        finally:
-            try:
-                if word is not None: word.Quit()
-            finally: pythoncom.CoUninitialize()
+        if session is not None: session.close()
     if not Path(output).is_file(): raise RuntimeError("Word did not create a PDF")
     return Path(output)
 

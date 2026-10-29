@@ -37,12 +37,39 @@ def render_image(original, step, number, style=None):
     """One renderer for exports and non-mutating canvas previews."""
     image = original.convert("RGB").copy()
     draw = ImageDraw.Draw(image)
+    magnifier_source=None
+    if any(a.kind=='magnifier' for a in step.annotations):
+        magnifier_source=image.copy()
+        apply_masks(magnifier_source,step.annotations)
     for annotation in step.annotations:
         x1, y1, x2, y2 = annotation.points
         box = (max(0, min(x1, x2)), max(0, min(y1, y2)), min(image.width, max(x1, x2)), min(image.height, max(y1, y2)))
         color = ImageColor.getrgb(annotation.color)
         width = max(1, min(30, annotation.width))
-        if annotation.kind == "callout":
+        if annotation.kind == 'magnifier':
+            left,top,right,bottom=[int(v) for v in box]
+            if right>left and bottom>top:
+                centre_x,centre_y=(left+right)/2,(top+bottom)/2
+                half_width=(right-left)/annotation.zoom/2
+                half_height=(bottom-top)/annotation.zoom/2
+                enlarged=magnifier_source.transform((right-left,bottom-top),Image.Transform.EXTENT,
+                    (centre_x-half_width,centre_y-half_height,centre_x+half_width,centre_y+half_height),Image.Resampling.BICUBIC)
+                image.paste(enlarged,(left,top))
+                draw.rectangle((left,top,right-1,bottom-1),outline=color,width=width)
+        elif annotation.kind == "design":
+            from .designs import render_design
+            left,top,right,bottom = (round(v) for v in box)
+            if right > left and bottom > top:
+                # Crop in design coordinates before scaling so off-image designs are not squeezed.
+                raw_left,raw_top=min(x1,x2),min(y1,y2)
+                raw_width,raw_height=abs(x2-x1),abs(y2-y1)
+                artwork = render_design(annotation.design)
+                source=((left-raw_left)*artwork.width/raw_width,(top-raw_top)*artwork.height/raw_height,
+                        (right-raw_left)*artwork.width/raw_width,(bottom-raw_top)*artwork.height/raw_height)
+                artwork = artwork.transform((right-left,bottom-top), Image.Transform.EXTENT, source, Image.Resampling.BICUBIC)
+                image.paste(artwork, (left,top), artwork)
+                draw = ImageDraw.Draw(image)
+        elif annotation.kind == "callout":
             label, lines, font = callout_layout(annotation, image.size)
             left, top, right, bottom = label
             edge = (max(left, min(right, x1)), max(top, min(bottom, y1)))
@@ -97,7 +124,14 @@ def render_image(original, step, number, style=None):
             font = ImageFont.truetype(str(font_path(True)), max(10, radius))
             draw.text((x, y), str(number), font=font, fill=color, anchor="mm")
     # Redactions always flatten last, including over markers and other annotations.
-    for a in step.annotations:
+    apply_masks(image,step.annotations)
+    return image
+
+
+def apply_masks(image,annotations):
+    """Also used before magnifier sampling so masks cannot be copied around."""
+    draw=ImageDraw.Draw(image)
+    for a in annotations:
         if a.kind not in {"redact", "blur"}:
             continue
         x1, y1, x2, y2 = a.points
@@ -108,7 +142,6 @@ def render_image(original, step, number, style=None):
             draw.rectangle(box, fill="black")
         else:
             image.paste(image.crop(box).filter(ImageFilter.GaussianBlur(18)), box[:2])
-    return image
 
 
 def wrap_text(text, font, width):

@@ -24,9 +24,10 @@ def export_pdf(project, root, output, orientation=None):
     project.company = project.company or settings["company"]
     project.logo = project.template.get("logo") or project.logo
     output = Path(output)
-    for name, bold in (("Vera", False), ("VeraBold", True)):
+    for name, filename in (("Vera","Vera.ttf"),("VeraBold","VeraBd.ttf"),("VeraItalic","VeraIt.ttf"),("VeraBoldItalic","VeraBI.ttf")):
         if name not in pdfmetrics.getRegisteredFontNames():
-            pdfmetrics.registerFont(TTFont(name, str(font_path(bold))))
+            pdfmetrics.registerFont(TTFont(name, str(font_path().parent / filename)))
+    pdfmetrics.registerFontFamily("Vera",normal="Vera",bold="VeraBold",italic="VeraItalic",boldItalic="VeraBoldItalic")
     selected_orientation = project.orientation if settings["orientation"] == "project" else settings["orientation"]
     page_size = landscape(A4) if (orientation or selected_orientation) == "landscape" else A4
     stream = BytesIO()
@@ -75,6 +76,8 @@ def export_pdf(project, root, output, orientation=None):
         if text or label != "Prerequisites":
             content(label, heading)
             content(text or "Not specified.")
+    from .company_information import pdf_information
+    story.extend(pdf_information(project.company_information, body, heading, doc.width))
     if not project.steps:
         content("Procedure", heading)
         content("No procedural steps have been added.")
@@ -108,7 +111,7 @@ def export_pdf(project, root, output, orientation=None):
         if step.notes:
             content("Notes / warnings", small)
             content(step.notes)
-        story.append(Spacer(1, 10))
+        if number < len(project.steps): story.append(Spacer(1, 10))
     story.append(PageBreak())
     content("Revision history", heading)
     content(project.revision_history or "No revisions recorded.")

@@ -16,8 +16,8 @@ def stylesheet(dark=False):
     QLabel#heading {{ font-size:18pt;font-weight:600; }}
     QLabel#subheading,QLabel#caption {{ color:{muted}; }}
     QLabel#status {{ background:{panel};padding:10px;border:1px solid {border};border-radius:6px; }}
-    QPushButton,QToolButton {{ background:{panel};border:1px solid {border};border-radius:5px;padding:5px 10px;min-height:20px; }}
-    QToolButton {{ padding:5px 8px; }}
+    QPushButton,QToolButton {{ background:{panel};border:1px solid {border};border-radius:5px;padding:6px 8px;min-height:20px; }}
+    QToolButton {{ padding:6px 8px; }}
     QToolButton[menuButton="true"] {{ padding-right:18px; }}
     QToolButton::menu-indicator {{ subcontrol-origin:padding;subcontrol-position:right center;right:4px;width:8px;height:8px; }}
     QPushButton:hover,QToolButton:hover {{ border-color:#168b9b;background:{bg}; }}
@@ -30,7 +30,7 @@ def stylesheet(dark=False):
     QLineEdit:disabled,QPlainTextEdit:disabled,QComboBox:disabled,QSpinBox:disabled,QDoubleSpinBox:disabled {{ color:{muted};background:{bg}; }}
     QComboBox QAbstractItemView {{ background:{panel};color:{text};selection-background-color:#168b9b;selection-color:white; }}
     QListWidget,QTableWidget,QTextBrowser {{ background:{panel};border:1px solid {border};border-radius:6px;padding:4px; }}
-    QListWidget::item {{ padding:8px 6px;border-radius:4px; }}
+    QListWidget::item {{ padding:6px 5px;border-radius:4px; }}
     QListWidget::item:selected {{ background:{selected};color:{text}; }}
     QTabWidget::pane {{ border:1px solid {border};border-radius:5px;background:{bg}; }}
     QTabBar::tab {{ background:{nav};color:{muted};padding:8px 12px;border:0;border-bottom:2px solid transparent; }}
@@ -40,6 +40,7 @@ def stylesheet(dark=False):
     QScrollArea {{ border:0;background:transparent; }}
     QSplitter::handle {{ background:{border}; }}
     QSplitter::handle:horizontal {{ width:2px;margin:0 3px; }}
+    QDockWidget::title {{ background:{nav};padding:5px;font-weight:600; }}
     QGroupBox {{ border:1px solid {border};border-radius:6px;margin-top:14px;padding:12px;font-weight:600; }}
     QGroupBox::title {{ subcontrol-origin:margin;left:10px;padding:0 4px; }}
     QStatusBar {{ color:{muted}; }}

@@ -24,6 +24,8 @@ class AnnotationCanvas(QWidget):
 
     def __init__(self):
         super().__init__()
+        from .preview_cache import PreviewCache
+        self.preview_cache=PreviewCache()
         self.setMinimumSize(350, 240)
         self.step = self.project = self.root = None
         self.pixmap = None
@@ -71,9 +73,8 @@ class AnnotationCanvas(QWidget):
         self.original = None
         if self.step and self.step.image:
             try:
-                with Image.open(ProjectStore(self.root).resolve(self.step.image)) as image:
-                    self.original = image.convert("RGB")
-                self.pixmap = image_pixmap(render_image(self.original, self.step, self.number, self.project))
+                self.original=self.preview_cache.image(ProjectStore(self.root).resolve(self.step.image))
+                self.pixmap = self.preview_cache.pixmap(self.root,self.step,self.number,self.project)
             except (OSError, ValueError):
                 pass
         self.update()

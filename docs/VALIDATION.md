@@ -1,5 +1,13 @@
 # Verification — 26 October 2026
 
+## UI performance — 29 October 2026
+
+- Full automated suite: **226 passed**, exit 0. Eight new regression tests cover decoded/rendered image reuse and invalidation, redaction/source immutability, library refresh and temporary-read recovery, unchanged layout writes, deferred revision previews and final Word-save timer cleanup.
+- `scripts/profile_studio.py` recorded before/after profiles with isolated synthetic data. Warm shared-image 80-step project load decreased from 0.653 to 0.245 seconds; 20 selections from 0.341 to 0.098 seconds; 12 screen visits from 0.515 to 0.206 seconds. Typing/resize improvement was not established. Details and limitations are in [PERFORMANCE.md](PERFORMANCE.md).
+- Source workspace and revision visual scripts completed successfully in both themes after the shared stylesheet change. Independent cache/lifecycle review found no important remaining defect.
+- One earlier full run hit a temporary Windows access-denied error replacing an isolated recent-history file; its targeted rerun and the final full suite passed. No project persistence guarantees were weakened to bypass it.
+- PyInstaller and packaged startup completed with exit 0. Packaged SOP/template DOCX/PDF exports, native Word edits, revision PDF import, approved transfers, floating-editor navigation and authored document export passed.
+
 ## Personal workspaces — 29 October 2026
 
 - Full automated suite: **218 passed**, exit 0. New coverage checks independent persistence, named layouts, role-compatible copying, shared unchecked toolbar actions, screen-specific command retention, corrupt preferences/native-state fallback, floating-panel navigation, lock/reset, shortcut rebinding, workspace customisation and navigation when preference writes fail.

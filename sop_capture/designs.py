@@ -230,22 +230,45 @@ def load_pack(path):
 
 
 class AnnotationLibrary:
-    def __init__(self,root):self.root=Path(root)
+    def __init__(self,root):
+        from collections import OrderedDict
+        self.root=Path(root);self._packs=OrderedDict();self._pack_bytes=0
+
+    def signature(self):
+        result=[]
+        for path in self.root.glob('*.sopannotation'):
+            try:stat=path.stat();result.append((path.name,stat.st_mtime_ns,stat.st_size))
+            except OSError:continue
+        return tuple(sorted(result))
+
+    def _read(self,identity):
+        path=self._path(identity);stat=path.stat();key=(str(path.resolve()),stat.st_mtime_ns,stat.st_size)
+        cached=self._packs.get(identity)
+        if cached and cached[0]==key:self._packs.move_to_end(identity);return cached[1]
+        if cached:self._pack_bytes-=cached[2];self._packs.pop(identity)
+        result=load_pack(path)
+        if stat.st_size<=16*1024*1024:
+            while self._packs and (self._pack_bytes+stat.st_size>16*1024*1024 or len(self._packs)>=64):
+                _,old=self._packs.popitem(last=False);self._pack_bytes-=old[2]
+            self._packs[identity]=(key,result,stat.st_size);self._pack_bytes+=stat.st_size
+        return result
 
     def _path(self,identity):
         if not isinstance(identity,str) or len(identity)!=32 or any(c not in '0123456789abcdef' for c in identity):raise ValueError('Invalid design identifier.')
         return self.root/(identity+'.sopannotation')
 
     def entries(self):
-        entries=[]
+        entries=[];self._read_failed=False
         if self.root.exists():
             for path in self.root.glob('*.sopannotation'):
                 try:
-                    self._path(path.stem);name,_=load_pack(path);entries.append((path.stem,name))
-                except (ValueError,OSError):continue
+                    self._path(path.stem);name,_=self._read(path.stem);entries.append((path.stem,name))
+                except OSError:self._read_failed=True;continue
+                except ValueError:continue
         return sorted(entries,key=lambda row:row[1].lower())
 
-    def load(self,identity):return load_pack(self._path(identity))
+    def load(self,identity):
+        name,design=self._read(identity);return name,deepcopy(design)
 
     def save(self,name,design,identity=None):
         identity=identity or uuid.uuid4().hex

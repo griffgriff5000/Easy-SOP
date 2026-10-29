@@ -313,7 +313,8 @@ class MainWindow(QMainWindow):
     def _annotation_library(self):
         from ..designs import AnnotationLibrary
         if self.annotation_library_override is not None:return self.annotation_library_override
-        return AnnotationLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'annotations')
+        if not hasattr(self,'_annotation_library_instance'):self._annotation_library_instance=AnnotationLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'annotations')
+        return self._annotation_library_instance
 
     def _update_library_save_button(self,*args):
         step=self.current_step();index=self.canvas.selected
@@ -340,15 +341,20 @@ class MainWindow(QMainWindow):
 
     def refresh_saved_annotations(self):
         from ..designs import render_design
-        gallery=self.annotation_gallery;gallery.clear_custom()
         library=self._annotation_library()
+        signature=library.signature()
+        if getattr(self,'_annotation_gallery_signature',None)==signature:self._sync_annotation_gallery();return
+        self._annotation_gallery_signature=signature
+        gallery=self.annotation_gallery;gallery.clear_custom()
         for identity,name in library.entries():
             try:
                 _,design=library.load(identity)
                 width,height=design['size'];ratio=min(96/width,48/height)
                 preview=render_design(design,(max(1,round(width*ratio)),max(1,round(height*ratio))))
                 gallery.add_custom(identity,name,QIcon(image_pixmap(preview)))
-            except (ValueError,OSError):log.warning('A saved annotation preview could not be loaded',exc_info=True)
+            except OSError:self._annotation_gallery_signature=None;log.warning('A saved annotation preview could not be loaded',exc_info=True)
+            except ValueError:log.warning('A saved annotation preview could not be loaded',exc_info=True)
+        if getattr(library,'_read_failed',False):self._annotation_gallery_signature=None
         self._sync_annotation_gallery()
 
     def _sync_annotation_gallery(self,*args):
@@ -1205,8 +1211,7 @@ class MainWindow(QMainWindow):
             item.setData(Qt.ItemDataRole.UserRole, step.id)
             if step.image:
                 try:
-                    thumbnail = render_step(self.store.root, step, index+1, self.project)
-                    thumbnail.thumbnail((130, 72))
+                    thumbnail = self.canvas.preview_cache.thumbnail(self.store.root, step, index+1, self.project)
                     item.setIcon(QIcon(image_pixmap(thumbnail)))
                 except (OSError, ValueError):
                     item.setToolTip("Screenshot unavailable; replace it to recover this step")

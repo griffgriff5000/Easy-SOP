@@ -41,6 +41,8 @@ The generated application is `dist\SOPCaptureStudio\SOPCaptureStudio.exe`. Distr
 
 ### Make the workspace your own
 
+Screenshot previews and reusable-design previews are cached with bounded memory use. Library visits reuse unchanged previews, and revision previews rebuild when opened instead of after every placement. These changes leave original images, export quality and document saves intact. Reproducible benchmark details are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+
 Each screen remembers its own layout. Drag panel title bars to another edge, dock panels together, resize their boundaries, double-click a title bar to float it, or close a panel to hide it. Floating panels can be used on another monitor and are hidden while another screen is active. Saved floating windows are brought back onto an available display if a monitor is disconnected.
 
 Open **Workspace → Customise this workspace** (or **Customise workspace…** on the menu bar) to choose visible panels, check toolbar actions and drag them into the desired order. Choose icons, text or both; set this screen's theme, text size and spacing; and lock panel/toolbar positions. **Apply** affects the current screen. Screen actions remain available as an optional panel and through existing menus.

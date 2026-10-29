@@ -63,7 +63,10 @@ class DockWorkspace(QMainWindow):
     def appearance(self):
         dark=self.global_dark if self.options['theme']=='auto' else self.options['theme']=='dark'
         padding=3 if self.options['density']=='compact' else 6
-        self.style_target.setStyleSheet(stylesheet(dark)+f'\nQWidget {{ font-size:{self.options["font_size"]}pt; }} QPushButton,QToolButton {{ padding:{padding}px 8px; }} QListWidget::item {{ padding:{padding}px 5px; }} QDockWidget::title {{ background:{"#192a3b" if dark else "#e8eef4"};padding:5px;font-weight:600; }}')
+        rules=stylesheet(dark) if self.options['theme']!='auto' else ''
+        if self.options['font_size']!=10:rules+=f'\nQWidget {{ font-size:{self.options["font_size"]}pt; }}'
+        if self.options['density']=='compact':rules+=f'\nQPushButton,QToolButton {{ padding:{padding}px 8px; }} QListWidget::item {{ padding:{padding}px 5px; }}'
+        if self.style_target.styleSheet()!=rules:self.style_target.setStyleSheet(rules)
         self.toolbar.setToolButtonStyle({'icons':Qt.ToolButtonStyle.ToolButtonIconOnly,'text':Qt.ToolButtonStyle.ToolButtonTextOnly,'both':Qt.ToolButtonStyle.ToolButtonTextBesideIcon}[self.options['tool_style']])
 
     def apply_layout(self,layout,portable=False):

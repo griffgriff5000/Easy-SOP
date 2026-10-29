@@ -35,6 +35,13 @@ class AnnotationLibraryPage(QWidget):
         item=self.entries.currentItem();return item.data(Qt.ItemDataRole.UserRole) if item else None
 
     def refresh(self,selected=None):
+        signature=self.library.signature()
+        if getattr(self,'_signature',None)==signature:
+            if selected:
+                for i in range(self.entries.count()):
+                    if self.entries.item(i).data(Qt.ItemDataRole.UserRole)==selected:self.entries.setCurrentRow(i);break
+            return
+        self._signature=signature
         selected=selected or self.current_identity();self.entries.clear()
         for identity,name in self.library.entries():
             try:
@@ -42,7 +49,9 @@ class AnnotationLibraryPage(QWidget):
                 icon=QIcon(image_pixmap(render_design(design,(max(1,round(width*ratio)),max(1,round(height*ratio))))))
                 item=QListWidgetItem(icon,name);item.setData(Qt.ItemDataRole.UserRole,identity);item.setToolTip(name);item.setSizeHint(QSize(180,78));self.entries.addItem(item)
                 if identity==selected:self.entries.setCurrentItem(item)
-            except (ValueError,OSError):continue
+            except OSError:self._signature=None;continue
+            except ValueError:continue
+        if getattr(self.library,'_read_failed',False):self._signature=None
         if self.entries.count() and self.entries.currentRow()<0:self.entries.setCurrentRow(0)
         self.selection_changed()
 

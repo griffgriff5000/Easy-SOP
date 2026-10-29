@@ -49,7 +49,7 @@ def portable_copy(source,target,allowed_actions):
 
 class LayoutLibrary:
     def __init__(self,path):
-        self.path=Path(path);self.data={'version':1,'screens':{},'presets':{}}
+        self.path=Path(path);self.data={'version':1,'screens':{},'presets':{}};self._last_saved=None
         try:
             raw=json.loads(self.path.read_text(encoding='utf-8'))
             if raw.get('version')!=1:raise ValueError('Unsupported layout preferences.')
@@ -58,10 +58,15 @@ class LayoutLibrary:
                 for name,value in raw[category].items():
                     try:self.data[category][name]=validate_layout(value)
                     except (ValueError,TypeError):logging.getLogger(__name__).warning('Skipped invalid workspace layout')
+            self._last_saved=self.encoded()
         except FileNotFoundError:pass
         except (ValueError,OSError,TypeError,AttributeError):logging.getLogger(__name__).warning('Workspace preferences could not be read; using defaults')
 
-    def write(self):atomic_bytes(self.path,json.dumps(self.data,ensure_ascii=False,indent=2).encode())
+    def encoded(self):return json.dumps(self.data,ensure_ascii=False,indent=2).encode()
+    def write(self):
+        data=self.encoded()
+        if data==self._last_saved:return
+        atomic_bytes(self.path,data);self._last_saved=data
     def screen(self,name):return deepcopy(self.data['screens'].get(name))
     def save_screen(self,name,value):self.data['screens'][name]=validate_layout(value);self.write()
     def presets(self):return deepcopy(self.data['presets'])

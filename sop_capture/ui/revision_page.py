@@ -3,7 +3,7 @@ from html import escape
 from pathlib import Path
 import tempfile
 from docx import Document
-from PySide6.QtCore import Qt,QBuffer,QIODevice,QUrl,QLockFile
+from PySide6.QtCore import Qt,QBuffer,QIODevice,QUrl,QLockFile,QTimer
 from PySide6.QtGui import QImage,QTextDocument
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QSplitter,QListWidget,QTextBrowser,QPlainTextEdit,QLineEdit,QComboBox,QTabWidget,QTableWidget,QTableWidgetItem,QFileDialog,QInputDialog,QMessageBox,QDialog,QFormLayout,QDialogButtonBox)
 from ..revisions import RevisionWorkspace
@@ -101,6 +101,7 @@ class RevisionPage(QWidget):
         self.model=QComboBox();self.model.addItem('Local structural matching',None);self.model.setMaximumWidth(210);assistant.addWidget(self.model)
         models=QPushButton('Find local AI');models.clicked.connect(self.find_models);assistant.addWidget(models);self.ask_button=QPushButton('Suggest');self.ask_button.clicked.connect(self.ask);assistant.addWidget(self.ask_button);box.addLayout(assistant)
         self.status=QLabel('Offline structural matching is built in. Optional AI uses an installed local Ollama model.');self.status.setWordWrap(True);box.addWidget(self.status)
+        self._preview_dirty=True;self.preview_timer=QTimer(self);self.preview_timer.setSingleShot(True);self.preview_timer.timeout.connect(self._render_preview);self.right_tabs.currentChanged.connect(self._preview_selected)
         self.controls()
 
     def error(self,message):QMessageBox.warning(self,'Document revision',str(message))
@@ -251,10 +252,21 @@ class RevisionPage(QWidget):
             except Exception as exc:self.error(exc)
 
     def refresh_preview(self):
-        if not self.work:return
+        self._preview_dirty=True
+        if self.work and self.right_tabs.currentIndex()==2:self.preview_timer.start(180)
+
+    def _preview_selected(self,index):
+        if index==2 and self.work:
+            try:self.word_editor.save_document()
+            except Exception as exc:self.error(exc);return
+            if self._preview_dirty:self.preview_timer.start(0)
+
+    def _render_preview(self):
+        if not self.work or not self._preview_dirty or self.right_tabs.currentIndex()!=2:return
+        self._preview_dirty=False
         try:
             path=build_document(self.work,self.work.root/'preview.docx');self.new_view.setHtml(document_html(self.new_view,path))
-        except Exception as exc:self.new_view.setPlainText('Preview needs attention: '+str(exc))
+        except Exception as exc:self._preview_dirty=True;self.new_view.setPlainText('Preview needs attention: '+str(exc))
 
     def ask(self):
         e=self.selected()
@@ -272,7 +284,7 @@ class RevisionPage(QWidget):
         self.task(lambda:LocalAssistant().models(),apply)
 
     def persist_document(self,data,source_key):
-        atomic_bytes(self.work.root/'authored.docx',data);self.work.state['authored']=True;self.work.save();self.controls();return 'authored.docx'
+        atomic_bytes(self.work.root/'authored.docx',data);self.work.state['authored']=True;self.work.save();self.refresh_preview();self.controls();return 'authored.docx'
 
     def open_word(self):
         if not self.work:return
@@ -305,10 +317,12 @@ class RevisionPage(QWidget):
 
     def close_session(self,release=True):
         try:
+            self.preview_timer.stop()
             self.word_editor.close_document()
             if self.work:self.work.save()
             if self.pdf_document:self.pdf_document.close();self.pdf_document.deleteLater();self.pdf_document=None
             if self.pdf_buffer:self.pdf_buffer.close();self.pdf_buffer.deleteLater();self.pdf_buffer=None
             if release and self.workspace_lock:self.workspace_lock.unlock();self.workspace_lock=None
+            self.preview_timer.stop()
             return True
         except Exception as exc:self.error(exc);return False

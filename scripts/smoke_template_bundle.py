@@ -122,6 +122,26 @@ text='\\n'.join(p.text for p in Document(root/'prepared-result.docx').paragraphs
 assert 'Generated clean step' in text and 'Prepared template SOP' in text
 page.close();page.deleteLater();app.processEvents()
 (root/'prepared-template-passed.txt').write_text('passed')
+from sop_capture.revisions import RevisionWorkspace
+from sop_capture.revision_import import inspect_source
+from sop_capture.revision_export import build_document
+from sop_capture.ui.revision_page import RevisionPage
+pdf_elements,pdf_warnings=inspect_source(root/'result.pdf',root/'pdf-revision-assets')
+assert any(e['kind']=='text' for e in pdf_elements)
+assert any(e['kind']=='page' for e in pdf_elements)
+revision=RevisionWorkspace.create(root/'revision-workspace',root/'edited.docx',root/'source.docx','B')
+element=next(e for e in revision.elements if e['kind']=='text' and e['text'])
+revision.approve(element['id'],'end',text='Approved revision transfer')
+review=RevisionPage(None);review.bind(revision);review.resize(1200,850);review.show();app.processEvents()
+draft=build_document(revision,root/'revision-draft.docx')
+review.word_editor.open_document(draft,None,None,'')
+selection=review.word_editor.session.document.ActiveWindow.Selection
+selection.EndKey(6);selection.TypeText('\\rRevision native editing preserved.')
+review.word_editor.save_document();assert revision.state['authored']
+review.close_session();review.close();app.processEvents()
+result=build_document(revision,root/'revision-B.docx')
+assert any('Revision native editing preserved.' in p.text for p in Document(result).paragraphs)
+(root/'revision-passed.txt').write_text('passed')
 '''
         code="import faulthandler\n_crash=open("+repr(str(root/'native-editor-crash.txt'))+",'w')\nfaulthandler.enable(_crash)\ntry:\n"+textwrap.indent(code,'    ')+"\nexcept BaseException:\n    import traceback\n    Path("+repr(str(root/'native-editor-failure.txt'))+").write_text(traceback.format_exc())\n    raise\n"
         process=mp.get_context('spawn').Process(target=exec,args=(code,{'__name__':'__native_smoke__'}));process.start();process.join(60)
@@ -133,6 +153,8 @@ page.close();page.deleteLater();app.processEvents()
         print('Packaged native Word editor: embedded edit and project save passed',flush=True)
         if not (root/'prepared-template-passed.txt').exists():raise RuntimeError('Frozen template preparation failed')
         print('Packaged automatic Word template preparation: passed',flush=True)
+        if not (root/'revision-passed.txt').exists():raise RuntimeError('Frozen revision transfer failed')
+        print('Packaged revision: PDF import, approved transfer and native Word edits passed',flush=True)
 
 
 if __name__ == "__main__": main()

@@ -127,6 +127,7 @@ class MainWindow(QMainWindow):
             side.addWidget(nav)
         self.annotation_nav=button('Annotation library',lambda:self.show_page(6));self.annotation_nav.setCheckable(True);self.nav_group.addButton(self.annotation_nav);side.addWidget(self.annotation_nav)
         self.nav_buttons.extend([self.home_nav,self.annotation_nav])
+        self.revision_nav=button('Revise document',lambda:self.show_page(7));self.revision_nav.setCheckable(True);self.nav_group.addButton(self.revision_nav);side.addWidget(self.revision_nav);self.nav_buttons.append(self.revision_nav)
         side.addStretch()
         local = QLabel("LOCAL BY DESIGN\nYour captures stay on this PC.")
         local.setWordWrap(True)
@@ -154,6 +155,8 @@ class MainWindow(QMainWindow):
         self.annotation_library_page=AnnotationLibraryPage(self._annotation_library());self.pages.addWidget(self.annotation_library_page)
         self.annotation_library_page.changed.connect(self.refresh_saved_annotations);self.annotation_library_page.changed.connect(self._refresh_home)
         self.annotation_library_page.use_requested.connect(self.use_library_annotation)
+        from .revision_page import RevisionPage
+        self.revision_page=RevisionPage(self.template_library,self.run_task);self.pages.addWidget(self.revision_page)
         layout.addWidget(sidebar)
         layout.addWidget(self.pages, 1)
         self.setCentralWidget(root)
@@ -239,7 +242,7 @@ class MainWindow(QMainWindow):
         for menu in self.app_menus.values():menu.clear()
         groups={"File":["new","open","save",None,"preview_pdf","export_pdf","export_word"],
                 "Edit":["undo","redo",None,"add_step","duplicate_step","delete_step",None,"move_up","move_down","group_steps","rename_section"],
-                "View":["page_5","page_0","page_1","page_2","page_4","page_6","page_3",None,"annotation_studio"],
+                "View":["page_5","page_0","page_1","page_2","page_4","page_6","page_7","page_3",None,"annotation_studio"],
                 "Settings":["page_3","shortcuts"]}
         for name,identities in groups.items():
             for identity in identities:
@@ -859,6 +862,7 @@ class MainWindow(QMainWindow):
         self.pages.widget(4).setEnabled(not self.active and not self.busy)
         self.pages.widget(5).setEnabled(not self.active and not self.busy)
         self.pages.widget(6).setEnabled(not self.active and not self.busy)
+        self.pages.widget(7).setEnabled(not self.active and not self.busy)
         self.annotation_library_page.set_can_use(ready and self.current_step() is not None and self.canvas.original is not None)
         self.templates_page.apply_button.setEnabled(ready)
         self.templates_page.preview_button.setEnabled(not self.active and not self.busy and not self.builder_preview.running)
@@ -1699,6 +1703,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         try:
+            if not self.revision_page.close_session():event.ignore();return
             self.flush_save()
             self.word_editor.close_document()
             self.builder_preview.clear_document()

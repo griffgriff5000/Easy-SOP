@@ -1,5 +1,14 @@
 # Verification — 26 October 2026
 
+## Assisted document revision — 29 October 2026
+
+- Full automated suite: **207 passed**, exit 0. Focused revision coverage includes ordered Word imports, tables/artwork, numbered lists, immutable inputs, approvals/undo/reopen, PDF tables/scans/manual transcription, exact authored-file preservation, revision metadata, invalid/local-only model responses, active-field rejection and PDF preview/lock cleanup.
+- `scripts/verify_revision.py` generated independent synthetic Rev A/template files, inspected the review and preview screens in light/dark themes at 1000 and 1440 pixels, and converted the resulting Rev B through installed desktop Word. The output page was visually inspected for header/footer, table, list numbering and artwork retention.
+- Independent review identified equation omission and dependent note/comment transfer risks. Imports now retain the equation text and mark these elements for manual transfer; regressions pass. A manual-transfer accounting issue was resolved by allowing report-only exclusions after Word editing without changing authored bytes.
+- PyInstaller build and packaged startup completed with exit 0. Extended `scripts/smoke_template_bundle.py` verified packaged PDF extraction/rendering dependencies, approved revision transfer, embedded Word edits and authored revision export, alongside the existing SOP/template DOCX/PDF checks.
+- `pip check`: no broken requirements. No Ollama service/model is installed/running in this environment; the live model inference path was not exercised. Locality/proposal validation is tested with controlled responses; built-in structural assistance is exercised without a model.
+- Scope: DOCX old/new and PDF old; editable whole-table transfer and manual final Word editing. PDF extraction requires review; scans offer artwork/manual transcription, without bundled OCR. Complex Word objects require manual transfer, not automatic reconstruction. Structure previews are approximate; desktop Word supplies authoritative layout.
+
 ## Project Home update — 29 October 2026
 
 - Full automated suite: **193 passed** (exit 0).

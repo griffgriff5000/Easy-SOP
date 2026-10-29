@@ -62,6 +62,18 @@ Choose a window on Capture before using **Retake selected window** in the editor
 
 Settings control delay, before/after-click timing, mouse buttons, global shortcut, optional initial frame, lossless PNG compression, annotation defaults, company/author/logo defaults, save location, orientation and theme. New-project defaults do not rewrite existing projects; the Document page changes an existing project's marker style and metadata.
 
+## Revising an existing procedure
+
+Open **Revise document** in the sidebar. **New revision** takes an old Word `.docx` or PDF, a new Word `.docx` template (uploaded or selected from the library), a new workspace folder and the next revision label. The workspace keeps independent source/template snapshots and its `revision.json`; use **Open revision** to resume it.
+
+The old revision is shown on the left and the new revision on the right. Select source text, a table or artwork, choose its destination, edit text/table cells and **Approve placement**. **Suggest** proposes a section using offline structural matching; it never approves content. Use **Order** to reorder approved elements, or **Exclude with reason** to account for unused content. Undo/redo covers transfer decisions. **Preview** shows document structure; **Original pages** displays the PDF or uses installed desktop Word to render the original DOCX. Exact new page layout and unrestricted editing are available on the **Word** tab using installed desktop Word.
+
+**Save details** records the new title, revision and change summary. Recognised template title/revision fields are filled; review company-specific fields in Word. Direct Word edits become the authoritative output; returning to placements requires confirmation and retains a manual-edit backup. **Export Word + report** saves a separate `.docx` and `.transfer.json` recording approvals, exclusions, warnings and unresolved elements. It never overwrites the original inputs. The new template's existing cover, tables, headers, footers and section layout remain; transferred body text inherits its paragraph styles. Tables are transferred as complete editable tables; company table cells and complex column restructuring can be completed in Word.
+
+PDF text, tables and image regions need comparison with the original page, especially merged cells and reading order. Full-page artwork is also available as an alternative. Scanned pages are flagged: transfer the page image or enter a manual transcription; automatic OCR is not bundled. Equations, notes, comments, tracked changes and unsupported objects are flagged for manual transfer instead of silently losing their supporting content. Active/external Word content is rejected at import.
+
+**Optional local AI:** install Ollama and a local model separately, start its local service, then select **Find local AI** and choose the installed model. The app connects only to `127.0.0.1:11434`, disables proxy/redirect use and rejects cloud-model entries. Model suggestions and proposed rewrites still need approval. No model is downloaded automatically, and structural matching works without one. See the [Ollama local API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md).
+
 ## Template library and company documents
 
 **Home** opens at startup and keeps up to 12 recent project shortcuts locally. Removing a shortcut leaves the project files in place. Unavailable projects remain listed so you can remove their shortcuts. **Continue editing** returns to the currently open project.

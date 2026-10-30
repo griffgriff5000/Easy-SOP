@@ -1,5 +1,12 @@
 # Verification — 26 October 2026
 
+## Windows download release — 30 October 2026
+
+- Published private GitHub release v0.1.0 from main commit c178552. ZIP and SHA-256 assets are available to invited collaborators; repository visibility remains private.
+- Windows build, startup, packaged SOP/template exports, native Word editing and revised-document checks passed. Seven packaging/template tests passed. The application source had previously passed all 226 tests; this release adds packaging and the missing installation dependency declaration.
+- ZIP CRC checks passed. An authenticated download of the 78,333,011-byte asset matched the local SHA-256. Personal project/history/profile files are rejected by the packaging script; only the built-in Standard SOP is present in a fresh library.
+- At the user's request, two saved company-template catalogue entries were cleared from the local library after creating a verified local backup. Existing project copies and retained library assets were preserved. No template backup or personal app data was uploaded.
+
 ## UI performance — 29 October 2026
 
 - Full automated suite: **226 passed**, exit 0. Eight new regression tests cover decoded/rendered image reuse and invalidation, redaction/source immutability, library refresh and temporary-read recovery, unchanged layout writes, deferred revision previews and final Word-save timer cleanup.

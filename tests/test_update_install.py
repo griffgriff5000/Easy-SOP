@@ -4,6 +4,68 @@ import pytest
 from sop_capture.update_install import validate_plan,apply_update
 
 
+def test_already_exited_parent_does_not_require_a_live_process_image(monkeypatch,tmp_path):
+    import ctypes
+    from types import SimpleNamespace
+    from sop_capture.update_install import wait_parent
+    class Call:
+        def __init__(self,fn):self.fn=fn
+        def __call__(self,*args):return self.fn(*args)
+    closed=[]
+    kernel=SimpleNamespace(OpenProcess=Call(lambda *a:1),CloseHandle=Call(lambda h:closed.append(h)),
+        WaitForSingleObject=Call(lambda *a:0),
+        QueryFullProcessImageNameW=Call(lambda *a:pytest.fail('An exited process may no longer expose its image path')))
+    monkeypatch.setattr(ctypes,'WinDLL',lambda *a,**k:kernel)
+    wait_parent({'parent_pid':123,'install':tmp_path})
+    assert closed==[1]
+
+
+def test_live_unrelated_parent_is_still_rejected(monkeypatch,tmp_path):
+    import ctypes
+    from types import SimpleNamespace
+    from sop_capture.update_install import wait_parent
+    class Call:
+        def __init__(self,fn):self.fn=fn
+        def __call__(self,*args):return self.fn(*args)
+    def query(handle,flags,buffer,size):
+        buffer.value=str(tmp_path/'unrelated.exe');return 1
+    kernel=SimpleNamespace(OpenProcess=Call(lambda *a:1),CloseHandle=Call(lambda h:None),
+        WaitForSingleObject=Call(lambda *a:258),QueryFullProcessImageNameW=Call(query))
+    monkeypatch.setattr(ctypes,'WinDLL',lambda *a,**k:kernel)
+    with pytest.raises(ValueError,match='Parent process'):
+        wait_parent({'parent_pid':123,'install':tmp_path})
+
+
+def test_frozen_main_app_can_prepare_external_helper(tmp_path,monkeypatch):
+    import hashlib,sys,zipfile
+    from sop_capture.update_install import prepare_handoff
+    path,install,stage=setup(tmp_path)
+    path.unlink()
+    archive=stage.parents[1]/'SOPCaptureStudio-0.2.0-Windows-x64.zip'
+    with zipfile.ZipFile(archive,'w') as bundle:
+        for file in stage.rglob('*'):
+            if file.is_file():bundle.write(file,'SOPCaptureStudio/'+file.relative_to(stage).as_posix())
+    digest=hashlib.sha256(archive.read_bytes()).hexdigest()
+    (archive.parent/'checksum.txt').write_text(digest+'  '+archive.name)
+    monkeypatch.setattr(sys,'frozen',True,raising=False)
+    monkeypatch.setattr(sys,'executable',str(install/'SOPCaptureStudio.exe'))
+    plan,runner,token=prepare_handoff(stage,install,'0.1.0','0.2.0',123)
+    assert runner.parent==plan.parent
+    assert not runner.is_relative_to(install)
+    assert runner.read_bytes()==b'helper'
+    assert json.loads(plan.read_text())['token']==token
+
+
+def test_frozen_updater_still_refuses_to_replace_its_own_folder(tmp_path,monkeypatch):
+    import sys
+    path,install,stage=setup(tmp_path)
+    monkeypatch.setattr(sys,'frozen',True,raising=False)
+    monkeypatch.setattr(sys,'executable',str(install/'SOPCaptureUpdater.exe'))
+    with pytest.raises(ValueError,match='outside the application folder'):
+        apply_update(path,wait_parent=lambda p:pytest.fail('Must refuse before waiting'))
+    assert (install/'SOPCaptureStudio.exe').read_bytes()==b'old'
+
+
 def setup(tmp_path):
     install=tmp_path/'installed';stage=tmp_path/'job/staged/SOPCaptureStudio';install.mkdir();stage.mkdir(parents=True)
     for root,version,content in ((install,'0.1.0',b'old'),(stage,'0.2.0',b'new')):

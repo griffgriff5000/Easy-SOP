@@ -46,7 +46,6 @@ def validate_plan(path):
     if plan.get('requires_confirmation'):
         archive=Path(plan.get('archive','')).resolve()
         if archive!=job/f'SOPCaptureStudio-{plan["new_version"]}-Windows-x64.zip' or not re.fullmatch('[a-f0-9]{64}',str(plan.get('sha256',''))):raise ValueError('Invalid verified update archive.')
-    if getattr(sys,'frozen',False) and Path(sys.executable).resolve().is_relative_to(install):raise ValueError('Updater must run outside the application folder.')
     plan.update(install=install,staged=staged,job=job)
     return plan
 
@@ -70,8 +69,14 @@ def wait_parent(plan,timeout=90):
         if ctypes.get_last_error()==87:return
         raise OSError('Could not verify the running application process.')
     try:
+        # A closed process can remain queryable by PID while another handle exists,
+        # but Windows may already have discarded its executable image information.
+        if kernel.WaitForSingleObject(handle,0)==0:return
         buffer=ctypes.create_unicode_buffer(32768);size=wintypes.DWORD(len(buffer))
-        if not kernel.QueryFullProcessImageNameW(handle,0,buffer,ctypes.byref(size)) or Path(buffer.value).resolve()!=plan['install']/'SOPCaptureStudio.exe':raise ValueError('Parent process is not the installed SOP application.')
+        if not kernel.QueryFullProcessImageNameW(handle,0,buffer,ctypes.byref(size)):
+            if kernel.WaitForSingleObject(handle,0)==0:return
+            raise ValueError('Parent process is not the installed SOP application.')
+        if Path(buffer.value).resolve()!=plan['install']/'SOPCaptureStudio.exe':raise ValueError('Parent process is not the installed SOP application.')
         if kernel.WaitForSingleObject(handle,int(timeout*1000))!=0:raise RuntimeError('SOP Capture Studio is still running. No files were replaced.')
     finally:kernel.CloseHandle(handle)
 
@@ -121,6 +126,8 @@ def acknowledge_startup(path,token,version,executable=None):
 
 def apply_update(path,*,wait_parent=wait_parent,launch=start_app,timeout=90):
     plan=validate_plan(path);install=plan['install'];job=plan['job'];suffix=plan['token'][:12]
+    # Preparation runs in the main app; only the replacement helper must be external.
+    if getattr(sys,'frozen',False) and Path(sys.executable).resolve().is_relative_to(install):raise ValueError('Updater must run outside the application folder.')
     prepared=install.parent/(install.name+'.update-'+suffix);replacement=prepared;backup=install.parent/(install.name+'.previous-'+suffix);ack=job/'ready.json';process=None;moved=False;installed=False;parent_closed=False
     if prepared.exists() or backup.exists() or ack.exists():raise ValueError('This update transaction has already been used.')
     log=job/'install.log'

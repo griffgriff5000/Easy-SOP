@@ -6,11 +6,13 @@ A local Windows desktop application for recording a selected application's mouse
 
 Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.
 
-1. Under **Assets**, download `SOPCaptureStudio-0.3.1-Windows-x64-Setup.exe`.
+1. Under **Assets**, download `SOPCaptureStudio-0.3.2-Windows-x64-Setup.exe`.
 2. Run Setup. It installs for your Windows account without administrator rights.
 3. Keep **Create a desktop shortcut** selected, then open the app from your Desktop or Start menu.
 
 The updater is included: use **Help > Check for updates**, download, then confirm **Install and restart**. Shortcuts keep working after updates. Projects and personal libraries stay separate and are retained when uninstalling.
+
+**Updating from 0.3.1 or earlier:** run the 0.3.2 Setup installer manually once. This repairs a bug that prevented earlier packaged versions from starting installation and refreshes the Desktop/Start menu shortcuts with the application logo. Personal projects and settings are retained.
 
 The ZIP is also available for portable use and existing automatic update clients. Extract the complete folder before running it. Existing portable users can run Setup once to switch to the installed version; their projects and preferences remain available.
 

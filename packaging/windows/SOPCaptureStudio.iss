@@ -52,8 +52,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Source: "{#PayloadDir}\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{userdesktop}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\SOPCaptureStudio.exe"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"; Tasks: desktopicon
-Name: "{userprograms}\{#ShortcutName}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\SOPCaptureStudio.exe"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"
+Name: "{userdesktop}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\_internal\sop_capture\assets\app.ico"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"; Tasks: desktopicon
+Name: "{userprograms}\{#ShortcutName}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\_internal\sop_capture\assets\app.ico"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"
 
 [Run]
 Filename: "{app}\App\SOPCaptureStudio.exe"; Description: "Launch SOP Capture Studio"; Flags: nowait postinstall skipifsilent

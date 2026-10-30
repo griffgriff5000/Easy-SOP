@@ -279,3 +279,14 @@ The user-supplied transparent logo is retained unchanged in `sop_capture/assets/
 
 Full automated suite: **249 passed**, exit 0. Fresh application build passed; `scripts/verify_branding.py` checked exact supplied ICO image bytes in all seven PE icon resources of both app and updater. A running packaged window's icon was extracted through WM_GETICON, rendered and visually verified to show the supplied artwork. Source QIcon loading and transparency passed. Installer smoke additionally checks each shortcut's IconLocation and System.AppUserModel.ID.
 The Setup executable also passed all seven embedded-image checks. Actual per-user install, shortcut icon paths and AppUserModelID, update, reinstall and uninstall passed; personal-data markers were preserved. Fresh read-only review found no correctness issues.
+
+## Frozen update handoff repair (0.3.2)
+
+Real 0.3.0 user downloads completed, but update preparation stopped after writing update-plan.json and before copying the runner. The frozen-location guard in validate_plan incorrectly treated the packaged main app as the replacement helper. The guard now runs in apply_update, before replacement, while plan validation remains usable by the main app.
+
+A new regression first failed with the user's error and then passed. Another test retains rejection when a frozen helper attempts to replace its own folder. Real frozen-button verification also exposed an exited-parent timing case: Windows can retain a process handle after its executable information is unavailable. wait_parent now accepts an already-exited process, retaining image checks for live processes. Tests cover exited parents and rejection of unrelated live processes.
+
+Full suite: **253 passed**, exit 0. Fresh app build passed. `scripts/smoke_frozen_update.py` runs MainWindow.install_update inside the actual frozen main executable, confirms through the production handoff, closes it, and waits for the real helper/new-app acknowledgement. Both successful update and failed-executable rollback passed. Only the confirmation dialog, synthetic preceding-version metadata and test-only quiet logging are controlled by the harness; preparation, helper copying/launching, closing/confirmation and replacement are real. This covers the path missed by the older source-driven helper smoke.
+
+Shortcuts now reference the bundled ICO directly, rather than an executable icon entry that might remain cached as Python. Existing versions require one manual 0.3.2 Setup installation because their broken handoff cannot install its own repair. Projects/settings remain separate.
+Final 0.3.2 Setup smoke passed current-user install, direct ICO shortcut paths and AppUserModelID, real update, reinstall and uninstall preserving personal-data markers. All seven logo sizes remain embedded in app, helper and Setup. Read-only review found the guard relocation correct; its harness quiet-mode finding was fixed before the successful frozen smoke.

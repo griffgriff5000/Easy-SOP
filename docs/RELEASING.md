@@ -25,8 +25,8 @@ The recommended user download is the versioned Windows x64 Setup.exe asset, not 
 4. Install the official signed [Inno Setup compiler](https://jrsoftware.org/isdl.php) (tested with 7.1.1 x64), then build and verify Setup from that same ZIP:
 
    ```powershell
-   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.1-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
-   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.1-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.2-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.2-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
    ```
 
    The smoke uses a unique uninstall registration and unique shortcut names, installs to a temporary directory with spaces, updates the actual installed App folder, and uninstalls while checking an untracked personal-file sentinel survives. It does not replace real app shortcuts.
@@ -65,3 +65,6 @@ Published on 30 October 2026: [v0.3.0](https://github.com/griffgriff5000/Easy-SO
 Application branding verification: after building Setup, run `python scripts/verify_branding.py dist/SOPCaptureStudio/SOPCaptureStudio.exe dist/SOPCaptureStudio/SOPCaptureUpdater.exe dist/releases/SOPCaptureStudio-0.3.1-Windows-x64-Setup.exe`. This checks embedded PE icon image bytes against the source multi-size ICO. When changing artwork, keep the process and shortcut AppUserModelID stable; run Setup again to refresh existing shortcuts.
 
 Published [v0.3.1](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.3.1) on 30 October 2026 from `b961c9d`, with the supplied application logo embedded in app, updater and Setup. Setup: 63,452,625 bytes, SHA-256 `ca6d4af3e4574de6e8ab7345ee294a916191ee27295bbb1324f90602f749278d`. ZIP: 86,309,313 bytes, SHA-256 `6c3ecf46b8111c084de4e110caca9dceb6f923f87188d5667784d68e876e6bf7`. All four assets were downloaded back and verified before publication; public update feed and Setup checksum checks passed. Run Setup again to refresh pre-existing shortcuts. Code signing remains separate.
+
+
+Run python scripts/smoke_frozen_update.py <release.zip> in addition to installer/helper checks. It exercises the production install-button handoff from inside the frozen main app, including successful restart and failed-startup rollback. Earlier versions through 0.3.1 need Setup 0.3.2 manually once to repair their frozen preparation bug.

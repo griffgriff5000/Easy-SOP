@@ -61,7 +61,8 @@ def run(archive, compiler):
                 assert Path(shortcut.TargetPath).resolve() == (app / 'SOPCaptureStudio.exe').resolve()
                 assert Path(shortcut.WorkingDirectory).resolve() == app.resolve()
                 icon_file, icon_index = shortcut.IconLocation.rsplit(',', 1)
-                assert Path(icon_file).resolve() == (app / 'SOPCaptureStudio.exe').resolve()
+                assert Path(icon_file).resolve() == (app / '_internal/sop_capture/assets/app.ico').resolve()
+                assert Path(icon_file).is_file()
                 assert int(icon_index) == 0
                 folder = win32com.client.Dispatch('Shell.Application').NameSpace(str(link.parent))
                 assert folder.ParseName(link.name).ExtendedProperty('System.AppUserModel.ID') == 'SOPCaptureStudio.Desktop'

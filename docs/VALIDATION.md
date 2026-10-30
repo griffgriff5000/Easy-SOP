@@ -262,3 +262,13 @@ Custom annotations use the application-level annotation library, shared across p
 Two new workflow tests save an annotation from project 1, reuse it in project 2, edit the placed copy and verify project 1 and the library are unchanged. Deleting the saved library entry leaves the embedded project-2 copy intact. Cancelling naming creates no library entry or project mutation. Complete suite: **186 passed**, process exit **0**.
 
 During work an external checkout/reset removed the app source from the active checkout. Per the user's instruction, main remains selected; existing application files were restored from feat/sop-capture-studio into the main working folder and the new annotation action reapplied. No merge commit was created.
+
+## Windows Setup installer (0.3.0)
+
+Full automated suite: **248 passed**, process exit 0. Fresh PyInstaller build and installer compilation passed. Packaged template DOCX/PDF, native Word edits/project save, template preparation and procedure-revision checks passed.
+
+An isolated Inno Setup installation used a unique AppId and shortcut names, with a path containing spaces. Verified current-user uninstall registration, Desktop shortcut selected by default, Start menu shortcut and bundled updater. A real helper update replaced the installed App folder while retaining shortcut targets and parent uninstall records. Reinstall after the update retained both links and an untracked personal file. Uninstall removed installed files and links while preserving that file and a marker in the real application-data directory. Test-only markers and registration were cleaned up.
+
+Standalone frozen updater success and failed-executable rollback also passed. Test payloads use the current executable with preceding-version manifest metadata to exercise handoff; this does not claim migration coverage between differing historical binary inventories. Uninstall intentionally retains untracked files and rollback folders. An initial smoke assertion compared short and long Windows temporary path spellings; canonicalizing the test root corrected it. A concurrent standalone smoke was refused by the process-identity guard; a serial rerun passed both success and rollback. No application files were replaced on that refusal.
+
+Fresh read-only review found no blocking correctness or security issues. Both Setup and portable ZIP have SHA-256 sidecars; the existing update parser was verified to select the ZIP when Setup assets are also present.

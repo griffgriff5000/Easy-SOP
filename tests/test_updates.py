@@ -26,6 +26,16 @@ def test_versions_and_only_correct_stable_release_assets():
     with pytest.raises(ValueError):parse_release(bad)
 
 
+def test_setup_assets_do_not_change_existing_portable_update_selection():
+    data=release('0.3.0')
+    base='https://github.com/griffgriff5000/Easy-SOP/releases/download/v0.3.0/'
+    for name in ('SOPCaptureStudio-0.3.0-Windows-x64-Setup.exe','SOPCaptureStudio-0.3.0-Windows-x64-Setup.exe.sha256'):
+        data['assets'].append({'name':name,'size':100,'browser_download_url':base+name})
+    parsed=parse_release(data)
+    assert parsed['asset']['name']=='SOPCaptureStudio-0.3.0-Windows-x64.zip'
+    assert parsed['checksum']['name'].endswith('.zip.sha256')
+
+
 def test_staging_checks_hash_manifest_and_zip_paths(tmp_path):
     path=tmp_path/'app.zip';digest=archive(path);staged=stage_archive(path,digest,tmp_path/'stage','0.2.0')
     assert (staged/'SOPCaptureStudio.exe').read_bytes()==b'MZmain'

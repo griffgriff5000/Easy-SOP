@@ -2,7 +2,7 @@
 
 The Easy-SOP repository is now public. Release pages and assets are available without signing in. Runtime update checks and downloads use public HTTPS endpoints without GitHub credentials. The first release was private at publication; the owner subsequently changed repository visibility.
 
-The user download is the ZIP asset, not GitHub's automatically generated Source code ZIP. Users extract the complete folder and launch SOPCaptureStudio.exe. Python is bundled; personal application data is not. A fresh local template library contains Standard SOP only. Company Word templates already stored on a user's PC stay local and are never seeded into the release.
+The recommended user download is the versioned Windows x64 Setup.exe asset, not GitHub's automatically generated Source code ZIP. Setup creates Desktop and Start menu shortcuts and bundles the updater. The portable ZIP remains available for existing update clients. Python is bundled; personal application data is not. A fresh local template library contains Standard SOP only. Company Word templates already stored on a user's PC stay local and are never seeded into the release.
 
 ## Preparing a release
 
@@ -22,8 +22,23 @@ The user download is the ZIP asset, not GitHub's automatically generated Source 
 
    The script writes `dist/releases/SOPCaptureStudio-<version>-Windows-x64.zip` and its `.zip.sha256` checksum. It includes the complete folder build, app license, quick-start guide, dependency metadata and installed dependency license files. It rejects builds containing personal project/history/template-profile files. It also checks archive CRCs. Review the included notices and runtime versions before distributing.
 
-4. Create a draft GitHub release targeting the tested main commit, attach the ZIP and checksum, and verify the uploaded/downloaded archive matches the local checksum before publishing. A normal published release enables README's `/releases/latest` link; a prerelease is not selected by that endpoint.
-5. Keep `_internal` with the EXE. Do not publish personal app-data directories, template backups or projects. Release assets are separate from the Git source history.
+4. Install the official signed [Inno Setup compiler](https://jrsoftware.org/isdl.php) (tested with 7.1.1 x64), then build and verify Setup from that same ZIP:
+
+   ```powershell
+   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.0-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.0-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   ```
+
+   The smoke uses a unique uninstall registration and unique shortcut names, installs to a temporary directory with spaces, updates the actual installed App folder, and uninstalls while checking an untracked personal-file sentinel survives. It does not replace real app shortcuts.
+
+5. Create a draft GitHub release targeting the tested main commit. Attach **four assets**: Setup.exe, its `.exe.sha256`, the portable ZIP and its `.zip.sha256`. Verify uploaded/downloaded bytes match local checksums before publishing. A normal published release enables README's `/releases/latest` link; a prerelease is not selected by that endpoint.
+6. Keep `_internal` with the EXE. Do not publish personal app-data directories, template backups or projects. Release assets are separate from the Git source history.
+
+## Setup layout and data preservation
+
+Setup installs without elevation to `%LOCALAPPDATA%\Programs\SOPCaptureStudio`. Application files, including `SOPCaptureUpdater.exe`, are in its `App` subfolder. Desktop (selected by default) and Start menu shortcuts target `App\SOPCaptureStudio.exe`. Uninstall records stay in the parent folder, so automatic updates replace App while retaining those records and stable shortcuts.
+
+Uninstall removes files installed by Setup and the shortcuts. It does not delete projects or `%LOCALAPPDATA%\SOPCaptureStudio\SOPCaptureStudio`, which contains personal settings and libraries. Updater rollback folders are retained. Do not add broad recursive uninstall deletion rules. The installer is unsigned until code signing is configured; it does not remove SmartScreen warnings.
 
 ## Updater-enabled releases
 

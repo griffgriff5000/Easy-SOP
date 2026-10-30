@@ -13,10 +13,13 @@ PRIVATE_NAMES={'project.json','project.backup.json','revision.json','recent-proj
 RUNTIME=('PySide6','PySide6_Essentials','PySide6_Addons','PySide6_Pdf','PySide6_WebEngine','shiboken6','Pillow','reportlab','python-docx','lxml','pdfplumber','pdfminer.six','pypdfium2','cryptography','cffi','pycparser','charset-normalizer','pywin32')
 QUICK_START='''SOP Capture Studio — Windows x64
 
-1. Download this ZIP from the GitHub release Assets section.
-2. Right-click the ZIP and choose Extract All. Keep the whole extracted folder.
-3. Open SOPCaptureStudio and double-click SOPCaptureStudio.exe.
-   Python and a terminal are not required. Do not move the EXE away from _internal.
+Recommended: download the versioned Windows x64 Setup.exe from GitHub Releases.
+Run Setup for your Windows account and keep Create a desktop shortcut selected.
+Open SOP Capture Studio from the Desktop or Start menu. The updater is included.
+
+Portable alternative: right-click the release ZIP and choose Extract All. Open
+SOPCaptureStudio and double-click SOPCaptureStudio.exe. Keep the whole folder.
+Python and a terminal are not required. Do not move the EXE away from _internal.
 
 Home > New project creates a separate folder for each SOP.
 A fresh template library contains Standard SOP only. You may add your own templates.
@@ -28,7 +31,8 @@ PDF conversion. Standard SOP capture/edit/export features can be used without Wo
 Optional local AI requires a separately installed Ollama service and local model.
 
 For later updates, use Help > Check for updates, download the verified package,
-then confirm Install and restart. Version 0.1.0 needs this manual installation once.
+then confirm Install and restart. Existing portable users can run Setup once to
+switch to the installed version. Projects and preferences remain available.
 
 Projects, templates and settings stay on your own machine. This download contains
 no saved company templates, recent-project history, personal settings or demo projects.

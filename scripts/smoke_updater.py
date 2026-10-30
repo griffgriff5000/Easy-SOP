@@ -25,23 +25,26 @@ def close_test_app(pid):
 
 
 def exercise(archive,root,expected):
-    root.mkdir();installed=stage_archive(archive,hashlib.file_digest(archive.open('rb'),'sha256').hexdigest(),root/'original','0.2.0')
+    with zipfile.ZipFile(archive) as bundle:version=json.loads(bundle.read('SOPCaptureStudio/RELEASE.json'))['version']
+    root.mkdir()
+    with archive.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
+    installed=stage_archive(archive,digest,root/'original',version)
     # Same real executable, labelled as the preceding release to exercise the handoff.
     (installed/'RELEASE.json').write_text(json.dumps({'app':'SOPCaptureStudio','version':'0.1.0'}))
-    job=root/'job';job.mkdir();payload=job/'SOPCaptureStudio-0.2.0-Windows-x64.zip'
+    job=root/'job';job.mkdir();payload=job/f'SOPCaptureStudio-{version}-Windows-x64.zip'
     if expected=='updated':shutil.copy2(archive,payload)
     else:
         with zipfile.ZipFile(archive) as source,zipfile.ZipFile(payload,'w',zipfile.ZIP_DEFLATED,compresslevel=1) as target:
             for item in source.infolist():target.writestr(item,b'not a Windows program' if item.filename=='SOPCaptureStudio/SOPCaptureStudio.exe' else source.read(item))
     with payload.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
-    (job/'checksum.txt').write_text(digest+'  '+payload.name+'\n');staged=stage_archive(payload,digest,job/'staged','0.2.0')
+    (job/'checksum.txt').write_text(digest+'  '+payload.name+'\n');staged=stage_archive(payload,digest,job/'staged',version)
     parent=subprocess.Popen([str(installed/'SOPCaptureStudio.exe'),'--smoke-test'],creationflags=subprocess.CREATE_NO_WINDOW)
-    plan,runner,token=prepare_handoff(staged,installed,'0.1.0','0.2.0',parent.pid);data=json.loads(plan.read_text());data['quiet']=True;plan.write_text(json.dumps(data))
+    plan,runner,token=prepare_handoff(staged,installed,'0.1.0',version,parent.pid);data=json.loads(plan.read_text());data['quiet']=True;plan.write_text(json.dumps(data))
     helper=subprocess.Popen([str(runner),'--plan',str(plan)],creationflags=subprocess.CREATE_NO_WINDOW)
     (job/'confirmed.json').write_text(json.dumps({'token':token}));parent.wait(timeout=40);helper.wait(timeout=150)
     result=json.loads((job/'result.json').read_text());assert result['status']==expected,result
     if expected=='updated':
-        assert json.loads((installed/'RELEASE.json').read_text())['version']=='0.2.0';assert Path(result['backup']).exists();close_test_app(result.get('pid'))
+        assert json.loads((installed/'RELEASE.json').read_text())['version']==version;assert Path(result['backup']).exists();close_test_app(result.get('pid'))
     else:
         assert json.loads((installed/'RELEASE.json').read_text())['version']=='0.1.0';close_test_app(result.get('restarted_pid'))
     print('Packaged updater:',expected,'passed',flush=True)

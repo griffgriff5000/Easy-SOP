@@ -2,6 +2,18 @@
 
 A local Windows desktop application for recording a selected application's mouse interactions, editing illustrated procedure steps and exporting an A4 SOP PDF. Python 3.12+, PySide6, Pillow and ReportLab. No cloud service, API key or account is required.
 
+## Download the Windows application
+
+Invited collaborators can download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)** while signed into the GitHub account invited to this private repository.
+
+1. Under **Assets**, download `SOPCaptureStudio-0.1.0-Windows-x64.zip`.
+2. Right-click the ZIP and select **Extract All**.
+3. Open the extracted `SOPCaptureStudio` folder and run **SOPCaptureStudio.exe**.
+
+Python is not required. Keep `_internal` beside the executable. New users start with **Standard SOP only** and can import their own templates. Personal templates, projects, recent history and settings are not included. Desktop Microsoft Word is required for direct Word editing and Word-based PDF conversion; optional local AI requires a separately installed model/service. See `START_HERE.txt` inside the download.
+
+The app is unsigned; organisational Windows policies may require IT approval. This is an early release, so review outputs before issuing controlled procedures.
+
 ## Workspace
 
 The app uses a shared layout and light/dark theme across all screens. File, Edit and View menus provide the main commands and show your configured shortcuts.

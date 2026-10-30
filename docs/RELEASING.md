@@ -33,6 +33,8 @@ The client downloads and verifies the ZIP, then asks before saving/closing. A he
 
 Run `python scripts/smoke_updater.py dist/releases/SOPCaptureStudio-0.2.0-Windows-x64.zip` to exercise successful handoff and rollback with isolated real executable copies. Source runs cannot replace the checkout. Existing 0.1.0 users must download the first updater-enabled ZIP manually once.
 
+Published on 30 October 2026: [v0.2.0](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.2.0), source commit `9148f5b`. ZIP size: 86,241,321 bytes. SHA-256: `63edd0ebd0b40aa531a3a82a7276a93650f9c32cafdf9afa6c890b09253c801a`. Uploaded/downloaded bytes matched before publication. The public update feed and checksum asset were verified without authentication.
+
 ## First release verification
 
 Version 0.1.0 is built from main commit `c178552` (application changes through `33a286b`). Release/package and template tests passed: 7 tests. The earlier application suite passed 226 tests. Fresh Windows build, startup, SOP/template DOCX/PDF exports, embedded Word editing, revision PDF import and authored revision export were verified before upload.

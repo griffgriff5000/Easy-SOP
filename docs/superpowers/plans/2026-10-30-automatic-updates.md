@@ -34,7 +34,7 @@
 - [x] Failing GUI tests for version/status/progress/cancel and guarded install.
 - [x] Add Help dialog, save/close integration, startup acknowledgement; bump version to 0.2.0 and include helper/manifest in release.
 - [x] Full tests (242 passed), real packaged apply/rollback smoke, independent review and docs.
-- Integration: commit/push main and publish the verified v0.2.0 ZIP/checksum.
+- [x] Committed/pushed main and published v0.2.0 ZIP/checksum; uploaded/downloaded SHA-256 matched and public update feed was checked anonymously.
 
 ## Execution notes
 

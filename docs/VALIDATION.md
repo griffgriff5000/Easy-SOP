@@ -2,6 +2,7 @@
 
 ## Confirmed automatic updates — 30 October 2026
 
+- Public v0.2.0 was published from commit 9148f5b. The 86,241,321-byte ZIP was downloaded back and matched its SHA-256; anonymous update-feed/checksum requests succeeded.
 - Full automated suite: **242 passed**, exit 0. Tests cover stable versions/assets, allowed update hosts, checksum cancellation, hostile archive paths, app/version manifests, replacement/backup, rollback, running unacknowledged processes, confirmed-close cancellation, startup acknowledgement binding and GUI check/download/install separation.
 - The standalone frozen updater self-test passed. The Windows build includes SOPCaptureUpdater.exe alongside the main EXE; the release ZIP contains matching RELEASE.json metadata.
 - `scripts/smoke_updater.py` exercised actual frozen executable copies in isolated temporary folders: replacement and startup acknowledgement passed; a deliberately invalid new executable caused rollback and reopening of the previous app. The harness was corrected to wait for the restarted window before closing it. Only synthetic test processes/files were cleaned.

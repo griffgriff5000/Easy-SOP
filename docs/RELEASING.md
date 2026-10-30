@@ -25,8 +25,8 @@ The recommended user download is the versioned Windows x64 Setup.exe asset, not 
 4. Install the official signed [Inno Setup compiler](https://jrsoftware.org/isdl.php) (tested with 7.1.1 x64), then build and verify Setup from that same ZIP:
 
    ```powershell
-   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.0-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
-   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.0-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.1-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.1-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
    ```
 
    The smoke uses a unique uninstall registration and unique shortcut names, installs to a temporary directory with spaces, updates the actual installed App folder, and uninstalls while checking an untracked personal-file sentinel survives. It does not replace real app shortcuts.
@@ -63,3 +63,5 @@ Microsoft Word is not bundled and is required for direct Word editing and Word-b
 Published on 30 October 2026: [v0.3.0](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.3.0), source commit `86b84ea`. Setup: 63,326,550 bytes, SHA-256 `974e0f8faf562d1e1ad643386c435e79c6fdb08f460ee4cb25d3f671814a627e`. Portable ZIP: 86,242,706 bytes, SHA-256 `0019067a4896ea308f91c2d6e5ddc843547136ee8f1b29b6ae7136b3d0c09631`. All four uploaded assets were downloaded back and verified before publication. The public latest-release feed selects the ZIP correctly alongside Setup, and the installer checksum is accessible without authentication. Validation: 248 automated tests, packaged Word/PDF/revision checks, install/update/reinstall/uninstall, and successful-update/failed-startup rollback smokes.
 
 Application branding verification: after building Setup, run `python scripts/verify_branding.py dist/SOPCaptureStudio/SOPCaptureStudio.exe dist/SOPCaptureStudio/SOPCaptureUpdater.exe dist/releases/SOPCaptureStudio-0.3.1-Windows-x64-Setup.exe`. This checks embedded PE icon image bytes against the source multi-size ICO. When changing artwork, keep the process and shortcut AppUserModelID stable; run Setup again to refresh existing shortcuts.
+
+Published [v0.3.1](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.3.1) on 30 October 2026 from `b961c9d`, with the supplied application logo embedded in app, updater and Setup. Setup: 63,452,625 bytes, SHA-256 `ca6d4af3e4574de6e8ab7345ee294a916191ee27295bbb1324f90602f749278d`. ZIP: 86,309,313 bytes, SHA-256 `6c3ecf46b8111c084de4e110caca9dceb6f923f87188d5667784d68e876e6bf7`. All four assets were downloaded back and verified before publication; public update feed and Setup checksum checks passed. Run Setup again to refresh pre-existing shortcuts. Code signing remains separate.

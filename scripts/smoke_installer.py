@@ -60,6 +60,11 @@ def run(archive, compiler):
                 shortcut = shell.CreateShortcut(str(link))
                 assert Path(shortcut.TargetPath).resolve() == (app / 'SOPCaptureStudio.exe').resolve()
                 assert Path(shortcut.WorkingDirectory).resolve() == app.resolve()
+                icon_file, icon_index = shortcut.IconLocation.rsplit(',', 1)
+                assert Path(icon_file).resolve() == (app / 'SOPCaptureStudio.exe').resolve()
+                assert int(icon_index) == 0
+                folder = win32com.client.Dispatch('Shell.Application').NameSpace(str(link.parent))
+                assert folder.ParseName(link.name).ExtendedProperty('System.AppUserModel.ID') == 'SOPCaptureStudio.Desktop'
             assert (app / 'SOPCaptureUpdater.exe').is_file()
             print('Installer: per-user payload, default Desktop and Start menu links passed', flush=True)
 

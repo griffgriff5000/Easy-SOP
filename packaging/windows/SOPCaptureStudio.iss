@@ -34,6 +34,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 UninstallFilesDir={app}
 UninstallDisplayIcon={app}\App\SOPCaptureStudio.exe
+SetupIconFile={#PayloadDir}\_internal\sop_capture\assets\app.ico
 OutputDir={#OutputDir}
 OutputBaseFilename=SOPCaptureStudio-{#AppVersion}-Windows-x64-Setup
 Compression=lzma2
@@ -51,8 +52,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Source: "{#PayloadDir}\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{userdesktop}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; Tasks: desktopicon
-Name: "{userprograms}\{#ShortcutName}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"
+Name: "{userdesktop}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\SOPCaptureStudio.exe"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"; Tasks: desktopicon
+Name: "{userprograms}\{#ShortcutName}\{#ShortcutName}"; Filename: "{app}\App\SOPCaptureStudio.exe"; WorkingDir: "{app}\App"; IconFilename: "{app}\App\SOPCaptureStudio.exe"; IconIndex: 0; AppUserModelID: "SOPCaptureStudio.Desktop"
 
 [Run]
 Filename: "{app}\App\SOPCaptureStudio.exe"; Description: "Launch SOP Capture Studio"; Flags: nowait postinstall skipifsilent

@@ -10,6 +10,9 @@ def main():
     multiprocessing.freeze_support()
     from .windows import enable_dpi_awareness
     enable_dpi_awareness()
+    from .branding import application_icon_path, set_windows_application_identity
+    set_windows_application_identity()
+    from PySide6.QtGui import QIcon
     from PySide6.QtCore import QStandardPaths, QTimer
     from PySide6.QtWidgets import QApplication
     from .ui.main_window import MainWindow
@@ -23,6 +26,7 @@ def main():
     app = QApplication(sys.argv[:1])
     app.setOrganizationName("SOPCaptureStudio")
     app.setApplicationName("SOPCaptureStudio")
+    app.setWindowIcon(QIcon(str(application_icon_path())))
     logs = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)) / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(logs / "studio.log", maxBytes=2_000_000, backupCount=3, encoding="utf-8")

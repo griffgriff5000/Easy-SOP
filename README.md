@@ -4,15 +4,23 @@ A local Windows desktop application for recording a selected application's mouse
 
 ## Download the Windows application
 
-Invited collaborators can download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)** while signed into the GitHub account invited to this private repository.
+Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.
 
-1. Under **Assets**, download `SOPCaptureStudio-0.1.0-Windows-x64.zip`.
+1. Under **Assets**, download `SOPCaptureStudio-0.2.0-Windows-x64.zip`.
 2. Right-click the ZIP and select **Extract All**.
 3. Open the extracted `SOPCaptureStudio` folder and run **SOPCaptureStudio.exe**.
 
 Python is not required. Keep `_internal` beside the executable. New users start with **Standard SOP only** and can import their own templates. Personal templates, projects, recent history and settings are not included. Desktop Microsoft Word is required for direct Word editing and Word-based PDF conversion; optional local AI requires a separately installed model/service. See `START_HERE.txt` inside the download.
 
 The app is unsigned; organisational Windows policies may require IT approval. This is an early release, so review outputs before issuing controlled procedures.
+
+### Updating from inside the app
+
+From version 0.2.0, open **Help → Check for updates**. The app checks the public GitHub stable release, shows your installed/latest versions and release notes, and downloads in the background when requested. After checksum/archive verification, **Install and restart** asks for confirmation, saves/closes normal project and Word work, and launches a separate updater. Finish any recording/export before installing.
+
+The updater verifies the archive again, stages the full app beside the installed folder, keeps the preceding app folder, and starts the new version. If the new process exits before confirming startup, the old app is restored. A still-running unconfirmed new process is left intact, with the previous folder retained and recovery details shown. No administrator elevation or Windows policy bypass is attempted. Projects and preferences remain separate; if personal files are stored inside the app folder, automatic replacement is refused.
+
+**Users on 0.1.0 need one manual download/extraction of 0.2.0** because 0.1.0 has no updater. Future releases can then install through the app. Source/development checkouts can check and download but are never replaced automatically. Checks are manual, and no project/document content is sent to GitHub. Update downloads and previous app folders use local disk space and can be retained for recovery.
 
 ## Workspace
 

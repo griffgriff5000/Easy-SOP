@@ -1,6 +1,6 @@
 # Windows downloads on GitHub
 
-The Easy-SOP repository is private. Release pages and downloads require a signed-in GitHub account with access to the repository. Invite collaborators through the repository's access settings; do not change repository visibility to share a download.
+The Easy-SOP repository is now public. Release pages and assets are available without signing in. Runtime update checks and downloads use public HTTPS endpoints without GitHub credentials. The first release was private at publication; the owner subsequently changed repository visibility.
 
 The user download is the ZIP asset, not GitHub's automatically generated Source code ZIP. Users extract the complete folder and launch SOPCaptureStudio.exe. Python is bundled; personal application data is not. A fresh local template library contains Standard SOP only. Company Word templates already stored on a user's PC stay local and are never seeded into the release.
 
@@ -24,6 +24,14 @@ The user download is the ZIP asset, not GitHub's automatically generated Source 
 
 4. Create a draft GitHub release targeting the tested main commit, attach the ZIP and checksum, and verify the uploaded/downloaded archive matches the local checksum before publishing. A normal published release enables README's `/releases/latest` link; a prerelease is not selected by that endpoint.
 5. Keep `_internal` with the EXE. Do not publish personal app-data directories, template backups or projects. Release assets are separate from the Git source history.
+
+## Updater-enabled releases
+
+Version 0.2.0 adds Help > Check for updates. The build spec creates a separate one-file SOPCaptureUpdater.exe and includes it beside SOPCaptureStudio.exe. The ZIP packager adds RELEASE.json with the matching app/version. Keep these names and the exact `SOPCaptureStudio-<version>-Windows-x64.zip` plus `.zip.sha256` naming for future stable releases. Bump both pyproject.toml and sop_capture.__version__ before building.
+
+The client downloads and verifies the ZIP, then asks before saving/closing. A helper copied outside the installation waits for a confirmed close, re-verifies/extracts the archive beside the old app, preserves the previous folder, and launches the new app. The new UI acknowledges its token/version; startup failures roll back only after the new process exits. The helper never elevates or kills processes. Users whose app folder contains personal files must update manually in a clean folder.
+
+Run `python scripts/smoke_updater.py dist/releases/SOPCaptureStudio-0.2.0-Windows-x64.zip` to exercise successful handoff and rollback with isolated real executable copies. Source runs cannot replace the checkout. Existing 0.1.0 users must download the first updater-enabled ZIP manually once.
 
 ## First release verification
 

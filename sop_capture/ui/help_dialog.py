@@ -6,6 +6,10 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QListWidget, QT
 
 
 TOPICS = {
+    "Application updates": """<h1>Install a newer app version</h1>
+<p>Open <b>Help &gt; Check for updates</b>. Checks use the public GitHub stable release and send no document/project content. Download the offered Windows update; progress and cancellation are available. After verification, choose <b>Install and restart</b> and confirm.</p>
+<p>Finish recording or document/export jobs first. Normal Word/project save and close checks run before installation; if closing fails, replacement is cancelled. The complete app folder is replaced by a separate helper after the old process exits. The preceding folder is retained; failed new startup is rolled back when the new process has exited. No Windows elevation or policy bypass is used.</p>
+<p>Projects, templates, annotations and preferences stay separate. Personal files inside the app folder prevent automatic replacement. If a new app remains running without confirming, its files are not overwritten; a recovery message identifies the retained previous folder. Version 0.1.0 users install the updater-enabled ZIP manually once. Source runs can check/download but cannot replace the checkout.</p>""",
     "Custom workspaces": """<h1>Arrange the app around your work</h1>
 <p>Each screen has its own layout. Drag panel title bars to dock at any edge, resize boundaries, double-click a title to float, or close a panel to hide it. Floating panels are hidden on inactive screens and can be moved to another monitor.</p>
 <p><b>Workspace &gt; Customise this workspace</b> selects visible panels and toolbar actions. Drag checked actions into order, choose icons/text, theme, text size and compact/comfortable spacing, then Apply. Lock layout prevents accidental docking changes. The menu-bar Customise workspace control remains available even when all panels/toolbars are hidden.</p>

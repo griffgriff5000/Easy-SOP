@@ -27,6 +27,9 @@ Desktop Microsoft Word must already be installed for direct Word editing and Wor
 PDF conversion. Standard SOP capture/edit/export features can be used without Word.
 Optional local AI requires a separately installed Ollama service and local model.
 
+For later updates, use Help > Check for updates, download the verified package,
+then confirm Install and restart. Version 0.1.0 needs this manual installation once.
+
 Projects, templates and settings stay on your own machine. This download contains
 no saved company templates, recent-project history, personal settings or demo projects.
 
@@ -40,6 +43,7 @@ This is an early release: review generated procedures before issuing controlled 
 def package(build,output,version,licenses=None):
     build=Path(build).resolve();output=Path(output).resolve()
     if not (build/'SOPCaptureStudio.exe').is_file() or not (build/'_internal').is_dir():raise ValueError('Build the complete SOPCaptureStudio folder first.')
+    if not (build/'SOPCaptureUpdater.exe').is_file():raise ValueError('The automatic update helper is missing; rebuild the application.')
     files=sorted(p for p in build.rglob('*') if p.is_file())
     for path in files:
         if path.name in PRIVATE_NAMES or path.suffix.lower()=='.sopannotation':raise ValueError('Private application data found in build: '+str(path.relative_to(build)))
@@ -47,6 +51,7 @@ def package(build,output,version,licenses=None):
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as bundle:
         for path in files:bundle.write(path,prefix+path.relative_to(build).as_posix())
         bundle.write(ROOT/'LICENSE',prefix+'LICENSE.txt');bundle.writestr(prefix+'START_HERE.txt',QUICK_START)
+        bundle.writestr(prefix+'RELEASE.json',json.dumps({'app':'SOPCaptureStudio','version':version}))
         for name in RUNTIME:
             try:dist=metadata.distribution(name)
             except metadata.PackageNotFoundError:continue

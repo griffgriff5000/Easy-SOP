@@ -1,5 +1,14 @@
 # Verification — 26 October 2026
 
+## Confirmed automatic updates — 30 October 2026
+
+- Full automated suite: **242 passed**, exit 0. Tests cover stable versions/assets, allowed update hosts, checksum cancellation, hostile archive paths, app/version manifests, replacement/backup, rollback, running unacknowledged processes, confirmed-close cancellation, startup acknowledgement binding and GUI check/download/install separation.
+- The standalone frozen updater self-test passed. The Windows build includes SOPCaptureUpdater.exe alongside the main EXE; the release ZIP contains matching RELEASE.json metadata.
+- `scripts/smoke_updater.py` exercised actual frozen executable copies in isolated temporary folders: replacement and startup acknowledgement passed; a deliberately invalid new executable caused rollback and reopening of the previous app. The harness was corrected to wait for the restarted window before closing it. Only synthetic test processes/files were cleaned.
+- Existing packaged SOP/template DOCX/PDF exports, native Word editing, revision transfer and authored-document exports passed. Update dialog available/verified states were visually inspected in both themes with fake release metadata; no update was installed by visual QA.
+- Independent review found an unnecessary duplicate restart when the parent remained running. A failing-then-passing regression and parent-exit guard resolved it; no important issue remained. Helper installation rechecks app ownership and the pinned archive hash before replacement.
+- Checks are manual and public, without credentials or document data. Version 0.1.0 needs a one-time manual installation of 0.2.0. Source checkouts do not self-replace; no elevation, process killing or Windows policy bypass is used.
+
 ## Windows download release — 30 October 2026
 
 - Published private GitHub release v0.1.0 from main commit c178552. ZIP and SHA-256 assets are available to invited collaborators; repository visibility remains private.

@@ -11,4 +11,9 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='SOPCaptureStudio',
           debug=False, bootloader_ignore_signals=False, strip=False, upx=False,
           console=False, uac_admin=False)
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='SOPCaptureStudio')
+helper = Analysis(['run_updater.py'], pathex=[], binaries=[], datas=[], hiddenimports=[],
+                  hookspath=[], hooksconfig={}, runtime_hooks=[],
+                  excludes=['PySide6','PIL','reportlab','docx','pdfplumber','win32com'], noarchive=False)
+updater = EXE(PYZ(helper.pure), helper.scripts, helper.binaries, helper.datas, [],
+              name='SOPCaptureUpdater', debug=False, strip=False, upx=False, console=False, uac_admin=False)
+coll = COLLECT(exe, updater, a.binaries, a.datas, strip=False, upx=False, name='SOPCaptureStudio')

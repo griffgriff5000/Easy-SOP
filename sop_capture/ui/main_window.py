@@ -256,6 +256,7 @@ class MainWindow(QMainWindow):
                 else:self.app_menus[name].addAction(self.action_bindings[identity])
         self.help_menu=self.app_menus["Help"];self.help_action=self.action_bindings["help"]
         self.help_menu.addAction(self.help_action);self.help_menu.addAction("Keyboard shortcuts",self.show_shortcuts)
+        self.help_menu.addAction('Check for updates…',self.show_updates)
         self.help_menu.addSeparator();self.help_menu.addAction("Open logs",self.open_logs);self.help_menu.addAction("About SOP Capture Studio",self.show_about)
 
     def _capture_shortcut_changed(self):
@@ -454,6 +455,33 @@ class MainWindow(QMainWindow):
     def show_about(self):
         from .. import __version__
         QMessageBox.about(self, "About SOP Capture Studio", f"SOP Capture Studio {__version__}\n\nRecord a selected Windows application, edit illustrated steps and export a procedure PDF.\n\nLocal processing. No account or API key required.\n\nPress F1 for the user guide.")
+
+    def show_updates(self):
+        from .update_dialog import UpdateDialog
+        dialog=getattr(self,'update_dialog',None)
+        created=dialog is None
+        if created:self.update_dialog=dialog=UpdateDialog(self,installer=self.install_update)
+        dialog.show();dialog.raise_();dialog.activateWindow()
+        if not created and dialog.operation is None and dialog.staged is None:dialog.check()
+
+    def install_update(self,staged,version):
+        import json,os,subprocess,sys
+        from .. import __version__
+        from ..update_install import prepare_handoff
+        from ..storage import atomic_bytes
+        if not getattr(sys,'frozen',False):raise ValueError('Automatic installation is available in the Windows release, not a source checkout.')
+        if self.active or self.busy or self.builder_preview.running:raise ValueError('Finish recording or the current document/export operation before installing.')
+        if QMessageBox.question(self,'Install and restart',f'Save your work, install version {version} and restart? The previous app folder will be retained. Projects and library data remain separate.',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return False
+        plan,runner,token=prepare_handoff(staged,Path(sys.executable).resolve().parent,__version__,version,os.getpid())
+        process=subprocess.Popen([str(runner),'--plan',str(plan)],cwd=str(runner.parent),creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),close_fds=True)
+        closed=self.close();marker=plan.parent/('confirmed.json' if closed else 'cancelled.json')
+        atomic_bytes(marker,json.dumps({'token':token}).encode())
+        if not closed:
+            try:
+                process.wait(timeout=5)
+                for name in ('update-plan.json','cancelled.json','result.json'):(plan.parent/name).unlink(missing_ok=True)
+            except subprocess.TimeoutExpired:pass
+        return closed
 
     def _capture_page(self):
         page = QWidget()

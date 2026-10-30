@@ -47,4 +47,4 @@
 - [x] Install to isolated directory/shortcut names, inspect Desktop and Start menu links, launch installed app and perform real update; expected stable link targets and retained uninstall records.
 - [x] Uninstall test installation; expected installed files/links removed while untracked sentinel and personal application data remain.
 - [x] Run full pytest and packaged application smoke; expected all pass. Obtain fresh review and fix material findings.
-- [ ] Commit and push main, publish Setup/ZIP with both checksums, download/hash published assets and verify update feed parses ZIP with four assets.
+- [x] Commit and push main, publish Setup/ZIP with both checksums, download/hash published assets and verify update feed parses ZIP with four assets.

@@ -57,3 +57,7 @@ Version 0.1.0 is built from main commit `c178552` (application changes through `
 Published on 30 October 2026: [SOP Capture Studio 0.1.0](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.1.0). The 78,333,011-byte ZIP was downloaded back through the authenticated release API and its SHA-256 matched `87607636e867389f448d10a80e5a8d59eddf5165e6f92cd55feff23bc136a397`. A checksum asset is attached. Repository visibility remains private.
 
 Microsoft Word is not bundled and is required for direct Word editing and Word-based PDF conversion. Optional local AI requires a separate Ollama installation/model. The executable is unsigned; users should follow their organisation's Windows policies.
+
+## Installer release verification
+
+Published on 30 October 2026: [v0.3.0](https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.3.0), source commit `86b84ea`. Setup: 63,326,550 bytes, SHA-256 `974e0f8faf562d1e1ad643386c435e79c6fdb08f460ee4cb25d3f671814a627e`. Portable ZIP: 86,242,706 bytes, SHA-256 `0019067a4896ea308f91c2d6e5ddc843547136ee8f1b29b6ae7136b3d0c09631`. All four uploaded assets were downloaded back and verified before publication. The public latest-release feed selects the ZIP correctly alongside Setup, and the installer checksum is accessible without authentication. Validation: 248 automated tests, packaged Word/PDF/revision checks, install/update/reinstall/uninstall, and successful-update/failed-startup rollback smokes.

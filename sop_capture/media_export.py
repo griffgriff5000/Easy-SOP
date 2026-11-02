@@ -18,16 +18,21 @@ class VideoExport(QObject):
     finished=Signal(object,object)
     progress=Signal(int)
     def __init__(self,parent=None):
-        super().__init__(parent);self.process=QProcess(self);self.temporary=None;self.cancelled=False
+        super().__init__(parent);self.process=QProcess(self);self.temporary=None;self.cancelled=False;self.sequence=None
         self.process.readyReadStandardError.connect(self._stderr)
         self.process.readyReadStandardOutput.connect(self._progress)
         self.process.finished.connect(self._done);self.process.errorOccurred.connect(self._error)
 
     @property
-    def busy(self):return self.temporary is not None
+    def busy(self):return self.temporary is not None or bool(self.sequence and self.sequence.busy)
 
     def start(self,session,output):
         if self.busy:raise ValueError('An export is already running.')
+        if session.timeline:
+            from .sequence_export import SequenceExport
+            if self.sequence is None:
+                self.sequence=SequenceExport(self);self.sequence.finished.connect(self.finished.emit);self.sequence.progress.connect(self.progress.emit)
+            self.sequence.start(session,output);return
         output=Path(output).resolve();arguments=export_arguments(session,output)
         if not output.parent.is_dir():raise ValueError('Choose an existing output folder.')
         executable=ffmpeg_executable()
@@ -37,6 +42,7 @@ class VideoExport(QObject):
         self.process.setProgram(executable);self.process.setArguments(arguments[:-1]+[str(self.temporary)]);self.process.start()
 
     def cancel(self):
+        if self.sequence and self.sequence.busy:self.sequence.cancel();return
         if self.busy:self.cancelled=True;self.process.kill() # only this owned export process, writing a disposable file
 
     def _stderr(self):self.errors=(self.errors+bytes(self.process.readAllStandardError()).decode('utf-8','replace'))[-16000:]

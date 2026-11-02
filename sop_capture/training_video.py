@@ -1,5 +1,5 @@
 """Local training-video session data and non-destructive MP4 export plans."""
-from dataclasses import dataclass,asdict
+from dataclasses import dataclass,asdict,field
 from pathlib import Path
 import json,math,re,uuid
 from .storage import atomic_bytes
@@ -16,6 +16,7 @@ class VideoSession:
     trim_end: float=0
     volume: float=1
     use_narration: bool=False
+    timeline: list=field(default_factory=list)
 
     @classmethod
     def create(cls,parent,title):
@@ -51,17 +52,22 @@ class VideoSession:
         if self.volume>2 or type(self.use_narration) is not bool:raise ValueError('Invalid narration settings.')
         if self.trim_end and self.trim_end<=self.trim_start:raise ValueError('Trim end must be after the start.')
 
+        from .video_timeline import validate_timeline
+        validate_timeline(self,self.timeline)
+
     def save(self):
-        self.validate();data=asdict(self);data.pop('root');data['schema_version']=1
-        atomic_bytes(self.root/'video.json',json.dumps(data,indent=2).encode())
+        self.validate();data=asdict(self);data.pop('root');data['schema_version']=2 if self.timeline else 1
+        raw=json.dumps(data,indent=2).encode()
+        if len(raw)>32*1024*1024:raise ValueError('Video session exceeds 32 MB; use fewer embedded designs.')
+        atomic_bytes(self.root/'video.json',raw)
 
     @classmethod
     def load(cls,path):
         path=Path(path).resolve();root=path if path.is_dir() else path.parent
         file=root/'video.json'
-        if file.stat().st_size>65536:raise ValueError('Video session is too large.')
+        if file.stat().st_size>32*1024*1024:raise ValueError('Video session is too large.')
         data=json.loads(file.read_text(encoding='utf-8'))
-        if not isinstance(data,dict) or data.pop('schema_version',None)!=1:raise ValueError('Unsupported video session.')
+        if not isinstance(data,dict) or data.pop('schema_version',None) not in (1,2):raise ValueError('Unsupported video session.')
         value=cls(root,**{k:v for k,v in data.items() if k in cls.__dataclass_fields__ and k!='root'});value.validate();return value
 
 

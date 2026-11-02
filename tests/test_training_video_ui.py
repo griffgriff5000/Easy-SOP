@@ -110,3 +110,17 @@ def test_export_tool_download_requires_consent_and_can_be_cancelled(qt_applicati
     while page.busy and time.monotonic()<deadline:QApplication.processEvents();time.sleep(.01)
     assert calls==['download'] and not page.busy and 'cancelled' in page.status.text()
     assert window.close()
+
+
+def test_new_recording_appends_to_edited_sequence(qt_application,tmp_path):
+    from sop_capture.training_video import VideoSession
+    from sop_capture.video_timeline import legacy_section
+    window=MainWindow();page=window.video_page;page._ensure_media()
+    video=VideoSession.create(tmp_path,'Sections');video.original='first.mkv';video.duration=4
+    video.asset('first.mkv').write_bytes(b'first');video.timeline=[legacy_section(video)]
+    page.set_session(video);second=video.asset('second.mkv');second.write_bytes(b'second')
+    page._recorded('video',second,5000,None)
+    assert len(page.video.timeline)==2
+    assert page.video.timeline[0]['source']=='first.mkv' and page.video.timeline[1]['source']=='second.mkv'
+    assert page.editor_button.isEnabled()
+    assert window.close()

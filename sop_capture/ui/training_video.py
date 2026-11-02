@@ -14,7 +14,7 @@ class TrainingVideoPage(QWidget):
     tool_progress=Signal(int)
     tool_finished=Signal(object,object)
     def __init__(self,can_record,parent=None):
-        super().__init__(parent);self.can_record=can_record;self.video=None;self.engine=None;self.player=None;self.loading=False
+        super().__init__(parent);self.can_record=can_record;self.video=None;self.engine=None;self.player=None;self.loading=False;self.editor=None
         self._media_ready=False;self._narration_failure=None;self.installing=False;self.download_cancel=threading.Event()
         self.tool_progress.connect(self._progress);self.tool_finished.connect(self._tool_installed)
         self.exporter=VideoExport(self);self.exporter.finished.connect(self._exported);self.exporter.progress.connect(self._progress)
@@ -22,6 +22,7 @@ class TrainingVideoPage(QWidget):
         tools=QHBoxLayout()
         self.new_button=self._button('New video',self.new_session,tools)
         self.open_button=self._button('Open video session',self.open_session,tools)
+        self.editor_button=self._button('Edit video...',self.edit_video,tools)
         self.folder_button=self._button('Open folder',self.open_folder,tools);tools.addStretch();box.addLayout(tools)
         split=QSplitter();self.controls=QWidget();self.controls.setObjectName('scrollPage');controls=QVBoxLayout(self.controls)
         self.identity=QLabel('Create or open a video session. Each video has its own folder.');self.identity.setWordWrap(True);controls.addWidget(self.identity)
@@ -63,7 +64,7 @@ class TrainingVideoPage(QWidget):
         button=QPushButton(text);button.clicked.connect(callback);layout.addWidget(button);return button
 
     @property
-    def busy(self):return bool(self.installing or (self.engine and self.engine.busy) or self.exporter.busy)
+    def busy(self):return bool((self.editor and self.editor.busy) or self.installing or (self.engine and self.engine.busy) or self.exporter.busy)
 
     def activate(self):
         try:
@@ -114,6 +115,19 @@ class TrainingVideoPage(QWidget):
         if required or identity is not None:raise ValueError('Select an available microphone first.')
         return None
 
+    def edit_video(self):
+        if self.busy:return
+        if not self.can_record():self.status.setText("Finish recording or the current operation before opening the editor.");return
+        if self.video is None and not self.new_session():return
+        self._ensure_media();self.player.pause();self.voice_player.pause();self.test_player.stop()
+        from .video_editor import VideoEditorDialog
+        window=self.window();library=window._annotation_library() if hasattr(window,'_annotation_library') else None
+        editor=VideoEditorDialog(self.video,library,self);self.editor=editor
+        try:
+            editor.exec();self.set_session(editor.session)
+            if editor.request_recording:self.record_video()
+        finally:self.editor=None;editor.deleteLater()
+
     def new_session(self):
         if self.busy:return False
         title,accepted=QInputDialog.getText(self,'New training video','Video name:')
@@ -137,7 +151,7 @@ class TrainingVideoPage(QWidget):
         self.video=session;self.loading=True
         self.start.setValue(session.trim_start);self.end.setValue(session.trim_end);self.volume.setValue(session.volume*100);self.use_voice.setChecked(session.use_narration)
         self.loading=False;self.identity.setText(session.title+'\n'+str(session.root))
-        self.status.setText('Session opened. Originals are retained in this folder.')
+        self.status.setText('Edited sequence: '+str(len(session.timeline))+' sections. Open Edit video to change sections, annotations and cards.' if session.timeline else 'Session opened. Originals are retained in this folder.')
         if self.player:self._load_media()
         self._refresh()
 
@@ -212,7 +226,11 @@ class TrainingVideoPage(QWidget):
             self.status.setText('Recording stopped: '+str(error)+' Unfinished files are retained in the session folder.')
         elif mode=='video':
             self.video.original=path.name;self.video.narration=None;self.video.use_narration=False
-            self.video.duration=duration/1000;self.video.trim_start=self.video.trim_end=0;self.video.save();self.set_session(self.video)
+            self.video.duration=duration/1000;self.video.trim_start=self.video.trim_end=0
+            if self.video.timeline:
+                from ..video_timeline import legacy_section
+                section=legacy_section(self.video);section['title']=f'Recording {len(self.video.timeline)+1}';self.video.timeline.append(section)
+            self.video.save();self.set_session(self.video)
             self.status.setText('Video recorded. Preview it, trim it or record a voiceover.')
         elif mode=='narration':
             self.video.narration=path.name;self.video.use_narration=True;self.video.save();self.set_session(self.video)
@@ -301,7 +319,7 @@ class TrainingVideoPage(QWidget):
     def export(self):
         if self.busy or not self.video:return
         self._ensure_media()
-        if not self._edited():return
+        if not self.video.timeline and not self._edited():return
         self.player.pause();self.voice_player.pause();self.test_player.stop()
         path,_=QFileDialog.getSaveFileName(self,'Export training video',str(self.video.root/'training-video.mp4'),'MP4 video (*.mp4)')
         if not path:return
@@ -352,12 +370,14 @@ class TrainingVideoPage(QWidget):
         if self.video:QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.video.root)))
 
     def _refresh(self):
-        busy=self.busy;has_video=bool(self.video and self.video.original)
+        busy=self.busy;has_video=bool(self.video and self.video.original);edited=bool(self.video and self.video.timeline)
         for item in (self.new_button,self.open_button,self.source,self.mic,self.refresh_button,self.minimize,self.test_button,self.record_button):item.setEnabled(not busy)
         for item in (self.start,self.end,self.volume,self.play_button,self.position,self.narrate_button):item.setEnabled(has_video and not busy)
-        self.narrate_button.setEnabled(has_video and self._media_ready and not busy)
-        self.use_voice.setEnabled(bool(self.video and self.video.narration) and not busy)
-        self.export_button.setEnabled(has_video and not busy and self.video.duration>0)
+        for item in (self.start,self.end,self.volume):item.setEnabled(has_video and not busy and not edited)
+        self.narrate_button.setEnabled(has_video and self._media_ready and not busy and not edited)
+        self.use_voice.setEnabled(bool(self.video and self.video.narration) and not busy and not edited)
+        self.export_button.setEnabled(not busy and (edited or (has_video and self.video.duration>0)))
+        self.editor_button.setEnabled(not busy)
         self.pause_button.setEnabled(bool(self.engine and self.engine.state in {'recording','paused'}));self.stop_button.setEnabled(bool(self.engine and self.engine.busy))
         self.cancel_button.setEnabled(self.installing or self.exporter.busy);self.folder_button.setEnabled(self.video is not None)
 

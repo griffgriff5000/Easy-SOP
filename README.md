@@ -10,6 +10,12 @@ Record a voiceover afterwards while watching the original, preview the combined 
 
 On the first MP4 export, the app offers to download the optional FFmpeg exporter (115 MB) directly from its distributor on GitHub. The download is checksum-verified and retained outside the installation for later exports. An internet connection is needed for this one-time download; all recording and processing are local. Development installs can use `imageio-ffmpeg` from requirements. See [media tool notices](docs/FFMPEG.md). Hardware microphone input should be checked with **Test microphone** on the user's PC.
 
+### Built-in video editor (source update)
+
+Choose **Training video > Edit video...** to build a sequence from recordings and imported clips. Split/trim each section, duplicate or move it up/down, add timed arrows, boxes, highlights, labels and saved annotation designs, and record a separate section voiceover. Add title and credits cards with text, logo, colours and duration. Edits autosave with Undo/Redo and preserve original footage/takes. Valid pending section fields are saved before switching; invalid trims stay open for correction.
+
+**Preview full video** renders the complete sequence inside the editor; **Export MP4** writes one 1280?720, 30 fps video with letterboxing and a consistent audio format. Overlays remain at fixed positions during their chosen time range; title/credits cards are still screens. Imported files are copied into the session. This editor is a source update after v0.4.0 and is not yet in the published installer. See the offline **Video editor** help topic.
+
 ## Download the Windows application
 
 Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.

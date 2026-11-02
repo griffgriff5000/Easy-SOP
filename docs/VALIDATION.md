@@ -309,3 +309,9 @@ The same grouping is used by standard PDF and generated Word content. Existing W
 Full automated suite: 279 passed. Added coverage for every explicit PDF count in Vertical/Grid, settings validation/migration, mixed screenshot/text-only grouping, long instructions, project/template round-trips, authored-document preservation and imported template structure. The existing legacy section/page-break regression also passes.
 
 Fresh read-only review and desktop Word rendering exposed and corrected a duplicate cover break and a separated Procedure heading. Word rerender confirmed a two-page cover/sample without a blank page and Procedure with its first screenshot in both modes. A long-cell probe retained all 600 repeated segments plus end marker and company content. Native PDF and Word-converted PDF samples for Vertical (two) and Grid (four) were rendered and visually inspected successfully under .superpowers/layout-visual. No installer version bump or release has been produced for this source-only update.
+
+## Layout release packaging (0.3.4)
+
+The layout source update is packaged for release as 0.3.4. Fresh full suite: **279 passed**, exit 0; fresh PyInstaller and Inno Setup builds passed. An isolated worker inside the actual frozen executable verified Vertical (two) and Grid (four), all six screenshots in DOCX, existing company table preservation, full instruction text in native PDF and Word-converted PDF, and the Document layout controls reflecting saved settings. All seven supplied logo sizes are embedded in app/helper/Setup.
+
+The real packaged main-app install-button smoke passed update and failed-startup rollback. Its first cleanup attempt exposed a harness-only race: rollback status was read before the helper appended restarted_pid. The harness now waits for helper termination before reading the final result; its rerun passed and cleaned up. Application replacement logic was unchanged.

@@ -6,7 +6,7 @@ A local Windows desktop application for recording a selected application's mouse
 
 Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.
 
-1. Under **Assets**, download `SOPCaptureStudio-0.3.3-Windows-x64-Setup.exe`.
+1. Under **Assets**, download `SOPCaptureStudio-0.3.4-Windows-x64-Setup.exe`.
 2. Run Setup. It installs for your Windows account without administrator rights.
 3. Keep **Create a desktop shortcut** selected, then open the app from your Desktop or Start menu.
 
@@ -122,7 +122,7 @@ Open **Templates** to choose **Standard SOP**, a named custom layout, or an uplo
 
 **Word uploads preserve company structure.** Upload a company `.docx` and give it a name. The app detects company styles, keeps covers, company tables, section layouts, headers, footers, logos and Word content controls, and removes recognised guidance/style demonstration sections. Lorem ipsum example prose is cleared; unknown content is retained. The SOP is inserted at an existing steps marker or where recognised guidance was removed, otherwise appended. Original uploads remain unchanged; no remote AI service is used.
 
-**Screenshot page layouts (source update):** under **Document > Layout**, choose Automatic, 1, 2, 3, 4 or 6 screenshots per page and Vertical or Grid (two columns). The count is a maximum: long instructions can add pages without clipping. Automatic Vertical retains flowing content; Automatic Grid groups up to four screenshots. The same choices are available in saved templates. Current-project changes are independent, save locally and support Undo. Word template covers, headers and existing tables remain intact. Directly edited Word documents retain their edits; choose Rebuild from captured steps to apply a new generated layout. This source update is not yet included in the 0.3.3 installer.
+**Screenshot page layouts:** under **Document > Layout**, choose Automatic, 1, 2, 3, 4 or 6 screenshots per page and Vertical or Grid (two columns). The count is a maximum: long instructions can add pages without clipping. Automatic Vertical retains flowing content; Automatic Grid groups up to four screenshots. The same choices are available in saved templates. Current-project changes are independent, save locally and support Undo. Word template covers, headers and existing tables remain intact. Directly edited Word documents retain their edits; choose Rebuild from captured steps to apply a new generated layout.
 
 Choose **Document > Fill template fields** for labelled company table values and **Next blank or placeholder**. Recognised title, reference, revision, prepared/checked/approved-by values use Document details; company-specific fields remain editable. Word content-control bindings repeat filled values on the cover and in tables. Complex/protected values offer **Edit on document**. Source values are applied when generating/rebuilding; existing direct edits are never replaced silently. Word refreshes contents and figure/table lists for preview/PDF and the embedded editor. DOCX marks these fields for refresh when opened in Word.
 

@@ -87,6 +87,9 @@ app.exec()
     result_path = job / 'result.json'; deadline = time.monotonic() + 150
     while not result_path.exists() and time.monotonic() < deadline: time.sleep(.2)
     assert result_path.exists(), 'External helper did not complete'
+    # Rollback writes its status before launching the restored app, then adds its
+    # PID. Wait for the helper to finish so cleanup sees the final result.
+    close_test_app(int((root / 'helper-pid.txt').read_text()))
     result = json.loads(result_path.read_text())
     try:
         assert result['status'] == ('rolled-back' if rollback else 'updated'), result

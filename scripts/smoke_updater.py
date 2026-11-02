@@ -13,7 +13,10 @@ def close_test_app(pid):
     try:handle=win32api.OpenProcess(win32con.SYNCHRONIZE,False,pid)
     except Exception:return
     def close(hwnd,unused):
-        if win32process.GetWindowThreadProcessId(hwnd)[1]==pid:win32gui.PostMessage(hwnd,win32con.WM_CLOSE,0,0)
+        try:
+            if win32process.GetWindowThreadProcessId(hwnd)[1]==pid:win32gui.PostMessage(hwnd,win32con.WM_CLOSE,0,0)
+        except win32gui.error as exc:
+            if exc.winerror!=1400:raise # the window can close between enumeration and PostMessage
     import win32event
     deadline=time.monotonic()+30;result=None
     while time.monotonic()<deadline:

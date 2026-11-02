@@ -1,11 +1,15 @@
 """Asynchronous FFmpeg export; replace the destination only after success."""
 from pathlib import Path
-import os,tempfile
+import os,tempfile,sys
 from PySide6.QtCore import QObject,QProcess,Signal
 from .training_video import export_arguments
 
 
 def ffmpeg_executable():
+    from .media_runtime import installed_runtime,MissingMediaRuntime
+    installed=installed_runtime()
+    if installed:return str(installed)
+    if getattr(sys,'frozen',False):raise MissingMediaRuntime('Download the optional video export tool first.')
     import imageio_ffmpeg
     return imageio_ffmpeg.get_ffmpeg_exe()
 

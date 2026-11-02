@@ -10,7 +10,7 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 PRIVATE_NAMES={'project.json','project.backup.json','revision.json','recent-projects.json','workspace-layouts.json','profile.json','video.json'}
-RUNTIME=('PySide6','PySide6_Essentials','PySide6_Addons','PySide6_Pdf','PySide6_WebEngine','shiboken6','Pillow','reportlab','python-docx','lxml','pdfplumber','pdfminer.six','pypdfium2','cryptography','cffi','pycparser','charset-normalizer','pywin32','imageio-ffmpeg')
+RUNTIME=('PySide6','PySide6_Essentials','PySide6_Addons','PySide6_Pdf','PySide6_WebEngine','shiboken6','Pillow','reportlab','python-docx','lxml','pdfplumber','pdfminer.six','pypdfium2','cryptography','cffi','pycparser','charset-normalizer','pywin32')
 QUICK_START='''SOP Capture Studio — Windows x64
 
 Recommended: download the versioned Windows x64 Setup.exe from GitHub Releases.
@@ -28,6 +28,8 @@ Workspace > Customise this workspace changes panel layouts and toolbars.
 
 Desktop Microsoft Word must already be installed for direct Word editing and Word-based
 PDF conversion. Standard SOP capture/edit/export features can be used without Word.
+Training video records locally. First MP4 export offers a one-time, checksum-verified
+115 MB FFmpeg download from its distributor on GitHub; later exports work offline.
 Optional local AI requires a separately installed Ollama service and local model.
 
 For later updates, use Help > Check for updates, download the verified package,
@@ -56,7 +58,8 @@ def package(build,output,version,licenses=None):
         for path in files:bundle.write(path,prefix+path.relative_to(build).as_posix())
         bundle.write(ROOT/'LICENSE',prefix+'LICENSE.txt');bundle.writestr(prefix+'START_HERE.txt',QUICK_START)
         bundle.writestr(prefix+'RELEASE.json',json.dumps({'app':'SOPCaptureStudio','version':version}))
-        if any('imageio_ffmpeg' in path.parts for path in files):
+        if any(path.name=='avutil-61.dll' for path in files):
+            if not licenses or not (Path(licenses)/'ffmpeg/ffmpeg-9.0.1.tar.gz').is_file():raise ValueError('Qt FFmpeg corresponding sources are required for a video release.')
             bundle.write(ROOT/'docs/FFMPEG.md',prefix+'licenses/ffmpeg/README.md')
             bundle.write(ROOT/'docs/licenses/FFmpeg-GPL-3.0.txt',prefix+'licenses/ffmpeg/COPYING.GPLv3')
         for name in RUNTIME:

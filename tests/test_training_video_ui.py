@@ -86,3 +86,27 @@ def test_export_suffix_change_requires_overwrite_confirmation(qt_application,mon
     assert questions and not calls
     assert output.read_bytes()==b'old export'
     assert window.close()
+
+
+def test_export_tool_download_requires_consent_and_can_be_cancelled(qt_application,monkeypatch,tmp_path):
+    import time
+    from PySide6.QtWidgets import QMessageBox,QApplication
+    from sop_capture import media_runtime
+    window=MainWindow();page=window.video_page
+    calls=[]
+    monkeypatch.setattr(QMessageBox,'question',lambda *a,**k:QMessageBox.StandardButton.Cancel)
+    monkeypatch.setattr(media_runtime,'install_runtime',lambda **kw:calls.append('download'))
+    page._download_tool(tmp_path/'out.mp4')
+    assert not calls and not page.busy
+    monkeypatch.setattr(QMessageBox,'question',lambda *a,**k:QMessageBox.StandardButton.Yes)
+    def download(**kw):
+        calls.append('download');kw['cancel'].wait(3)
+        raise RuntimeError('Video tool download cancelled.')
+    monkeypatch.setattr(media_runtime,'install_runtime',download)
+    page._download_tool(tmp_path/'out.mp4')
+    assert page.busy and page.cancel_button.isEnabled() and not window.close()
+    page.cancel_export()
+    deadline=time.monotonic()+5
+    while page.busy and time.monotonic()<deadline:QApplication.processEvents();time.sleep(.01)
+    assert calls==['download'] and not page.busy and 'cancelled' in page.status.text()
+    assert window.close()

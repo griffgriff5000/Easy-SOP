@@ -1,6 +1,7 @@
 """Training video recording and basic voiceover editing, independent of SOP projects."""
 from pathlib import Path
-from PySide6.QtCore import Qt,QUrl,QTimer,QStandardPaths
+import threading
+from PySide6.QtCore import Qt,QUrl,QTimer,QStandardPaths,Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QComboBox,
     QCheckBox,QDoubleSpinBox,QSlider,QProgressBar,QSplitter,QFormLayout,QFileDialog,QInputDialog,QDialog,QMessageBox)
@@ -10,9 +11,12 @@ from ..media_export import VideoExport
 
 
 class TrainingVideoPage(QWidget):
+    tool_progress=Signal(int)
+    tool_finished=Signal(object,object)
     def __init__(self,can_record,parent=None):
         super().__init__(parent);self.can_record=can_record;self.video=None;self.engine=None;self.player=None;self.loading=False
-        self._media_ready=False;self._narration_failure=None
+        self._media_ready=False;self._narration_failure=None;self.installing=False;self.download_cancel=threading.Event()
+        self.tool_progress.connect(self._progress);self.tool_finished.connect(self._tool_installed)
         self.exporter=VideoExport(self);self.exporter.finished.connect(self._exported);self.exporter.progress.connect(self._progress)
         box=QVBoxLayout(self);page_header(box,'Training video','Record a screen or window, add your narration and export an MP4. Everything stays on this PC.')
         tools=QHBoxLayout()
@@ -37,7 +41,7 @@ class TrainingVideoPage(QWidget):
         self.volume=QDoubleSpinBox();self.volume.setRange(0,100);self.volume.setValue(100);self.volume.setSuffix(' %');self.volume.valueChanged.connect(self._edited);edits.addRow('Audio volume',self.volume)
         self.use_voice=QCheckBox('Use recorded voiceover instead of original audio');self.use_voice.toggled.connect(self._edited);edits.addRow(self.use_voice);controls.addLayout(edits)
         self.export_button=QPushButton('Export MP4...');self.export_button.setObjectName('primary');self.export_button.clicked.connect(self.export);controls.addWidget(self.export_button)
-        self.cancel_button=QPushButton('Cancel export');self.cancel_button.clicked.connect(self.exporter.cancel);controls.addWidget(self.cancel_button)
+        self.cancel_button=QPushButton('Cancel export');self.cancel_button.clicked.connect(self.cancel_export);controls.addWidget(self.cancel_button)
         self.progress=QProgressBar();controls.addWidget(self.progress);controls.addStretch()
         self.controls_scroll=scroll_panel(self.controls);split.addWidget(self.controls_scroll)
         preview=QWidget();preview_box=QVBoxLayout(preview);self.preview_box=preview_box
@@ -59,7 +63,7 @@ class TrainingVideoPage(QWidget):
         button=QPushButton(text);button.clicked.connect(callback);layout.addWidget(button);return button
 
     @property
-    def busy(self):return bool((self.engine and self.engine.busy) or self.exporter.busy)
+    def busy(self):return bool(self.installing or (self.engine and self.engine.busy) or self.exporter.busy)
 
     def activate(self):
         try:
@@ -305,7 +309,39 @@ class TrainingVideoPage(QWidget):
         if output!=chosen and output.exists() and QMessageBox.question(self,'Replace MP4 export?',f'{output.name} already exists. Replace it?',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
         try:
             self.progress.setValue(0);self.exporter.start(self.video,output);self.status.setText('Exporting MP4. Originals and existing output are retained until success.');self._refresh()
-        except Exception as exc:self.status.setText('Could not export: '+str(exc));self._refresh()
+        except Exception as exc:
+            from ..media_runtime import MissingMediaRuntime
+            if isinstance(exc,MissingMediaRuntime):self._download_tool(output)
+            else:self.status.setText('Could not export: '+str(exc));self._refresh()
+
+    def _download_tool(self,output):
+        answer=QMessageBox.question(self,'Download video export tool?',
+            'MP4 export needs a one-time download of FFmpeg 9.0.2 (115 MB) from Gyan, its official distributor on GitHub. '
+            'The download is checksum-verified and kept for future exports. Video and audio stay on this PC. Download now?',
+            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.Cancel)
+        if answer!=QMessageBox.StandardButton.Yes:return
+        if not self.can_record():self.status.setText('Finish the current operation before downloading.');return
+        from ..media_runtime import install_runtime
+        self.installing=True;self.download_cancel.clear();self.pending_output=output
+        self.status.setText('Downloading and verifying the video export tool...');self._refresh()
+        def run():
+            try:value,error=install_runtime(cancel=self.download_cancel,progress=self.tool_progress.emit),None
+            except Exception as exc:value,error=None,exc
+            self.tool_finished.emit(value,error)
+        self.download_thread=threading.Thread(target=run,daemon=True);self.download_thread.start()
+
+    def _tool_installed(self,value,error):
+        self.installing=False
+        if error or self.download_cancel.is_set():self.status.setText(str(error) if error else "Video tool download cancelled.");self._refresh();return
+        try:
+            self.progress.setValue(0);self.exporter.start(self.video,self.pending_output)
+            self.status.setText('Exporting MP4. Originals and existing output are retained until success.')
+        except Exception as exc:self.status.setText('Could not export: '+str(exc))
+        self._refresh()
+
+    def cancel_export(self):
+        if self.installing:self.download_cancel.set();self.status.setText('Cancelling video tool download...')
+        else:self.exporter.cancel()
 
     def _progress(self,value):self.progress.setValue(value)
 
@@ -323,7 +359,7 @@ class TrainingVideoPage(QWidget):
         self.use_voice.setEnabled(bool(self.video and self.video.narration) and not busy)
         self.export_button.setEnabled(has_video and not busy and self.video.duration>0)
         self.pause_button.setEnabled(bool(self.engine and self.engine.state in {'recording','paused'}));self.stop_button.setEnabled(bool(self.engine and self.engine.busy))
-        self.cancel_button.setEnabled(self.exporter.busy);self.folder_button.setEnabled(self.video is not None)
+        self.cancel_button.setEnabled(self.installing or self.exporter.busy);self.folder_button.setEnabled(self.video is not None)
 
     def prepare_close(self):
         if self.busy:

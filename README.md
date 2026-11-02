@@ -2,19 +2,19 @@
 
 A local Windows desktop application for recording a selected application's mouse interactions, editing illustrated procedure steps and exporting an A4 SOP PDF. Python 3.12+, PySide6, Pillow and ReportLab. No cloud service, API key or account is required.
 
-## Training video (source update)
+## Training video
 
 The **Training video** workspace records a screen or window with optional microphone narration. Create a video session in your chosen folder, select the source and microphone, then record using the visible pause/stop controls. Opening the workspace does not activate a microphone. The three-second microphone test records and plays a local test file.
 
 Record a voiceover afterwards while watching the original, preview the combined tracks, trim start/end, adjust audio volume and export a separate MP4. Originals and earlier takes are retained. Each video has its own folder and `video.json`; **Open video session** reopens it independently of SOP projects. The workspace layout is customizable. Stop/finalize recording or cancel export before closing/updating the app.
 
-This source feature has not been published in a new installer. Development installs need `imageio-ffmpeg` from requirements; packaged builds include its separate FFmpeg executable and Qt Multimedia plugins. See [FFmpeg redistribution notes](docs/FFMPEG.md) before publishing a video-enabled installer. Hardware microphone input should be checked with **Test microphone** on the user's PC.
+On the first MP4 export, the app offers to download the optional FFmpeg exporter (115 MB) directly from its distributor on GitHub. The download is checksum-verified and retained outside the installation for later exports. An internet connection is needed for this one-time download; all recording and processing are local. Development installs can use `imageio-ffmpeg` from requirements. See [media tool notices](docs/FFMPEG.md). Hardware microphone input should be checked with **Test microphone** on the user's PC.
 
 ## Download the Windows application
 
 Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.
 
-1. Under **Assets**, download `SOPCaptureStudio-0.3.4-Windows-x64-Setup.exe`.
+1. Under **Assets**, download `SOPCaptureStudio-0.4.0-Windows-x64-Setup.exe`.
 2. Run Setup. It installs for your Windows account without administrator rights.
 3. Keep **Create a desktop shortcut** selected, then open the app from your Desktop or Start menu.
 

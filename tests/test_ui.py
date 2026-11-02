@@ -10,6 +10,83 @@ from sop_capture.storage import ProjectStore
 from sop_capture.ui.main_window import MainWindow
 
 
+@pytest.mark.parametrize('selected,position',[(0,1),(-1,2)])
+def test_new_captures_follow_selected_step_and_keep_capture_order(tmp_path,selected,position):
+    from sop_capture.capture import CaptureResult
+    window=MainWindow();store=ProjectStore(tmp_path)
+    first=Step(title='First',section='Preparation');last=Step(title='Last')
+    window.set_project(Project(steps=[first,last]),store)
+    window.steps_list.setCurrentRow(selected)
+    originals=[s.id for s in window.project.steps]
+    result=CaptureResult(image=Image.new('RGB',(40,30),'white'),bounds=(0,0,40,30),marker=None,button='left',timestamp='now')
+    window._captured(result)
+    captured=window.current_step()
+    assert window.project.steps[position].id==captured.id
+    assert [s.id for s in window.project.steps if s.id!=captured.id]==originals
+    assert captured.section==('Preparation' if selected==0 else '')
+    window._captured(result)
+    assert window.project.steps[position+1].id==window.current_step().id
+    assert store.load().steps[position].id==captured.id
+    window.close()
+
+
+def test_move_to_position_preserves_selection_content_save_and_undo(tmp_path):
+    window=MainWindow();store=ProjectStore(tmp_path)
+    steps=[Step(title=str(n),description=f'Instruction {n}') for n in range(5)]
+    window.set_project(Project(steps=steps),store)
+    window.steps_list.setCurrentRow(1);identity=window.current_step().id
+    window.move_step_to(4)
+    assert [s.title for s in window.project.steps]==['0','2','3','4','1']
+    assert window.current_step().id==identity
+    window.move_step_to(0)
+    assert [s.title for s in window.project.steps]==['1','0','2','3','4']
+    window.flush_save();assert store.load().steps[0].description=='Instruction 1'
+    window.undo();assert [s.title for s in window.project.steps]==['0','2','3','4','1']
+    window.steps_list.setCurrentRow(-1)
+    window.move_step(1)
+    assert [s.title for s in window.project.steps]==['0','2','3','4','1']
+    window.close()
+
+
+def test_drag_move_keeps_the_dragged_step_selected(tmp_path):
+    from PySide6.QtCore import QModelIndex
+    window=MainWindow();store=ProjectStore(tmp_path)
+    steps=[Step(title=str(n)) for n in range(3)]
+    window.set_project(Project(steps=steps),store)
+    window.steps_list.setCurrentRow(0);identity=window.current_step().id
+    assert window.steps_list.model().moveRows(QModelIndex(),0,1,QModelIndex(),3)
+    assert [s.title for s in window.project.steps]==['1','2','0']
+    assert window.current_step().id==identity
+    window.undo();assert [s.title for s in window.project.steps]==['0','1','2']
+    window.close()
+
+
+def test_add_screenshot_below_keeps_original_and_supports_undo(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    window=MainWindow();store=ProjectStore(tmp_path)
+    monkeypatch.setattr(window,'fail',lambda message:pytest.fail(str(message)))
+    first=Step(title='Original');first.image=store.add_image(Image.new('RGB',(40,30),'red'),first.id)
+    last=Step(title='Last')
+    window.set_project(Project(steps=[first,last]),store);window.steps_list.setCurrentRow(0)
+    original=first.image
+    window.target=object()
+    monkeypatch.setattr(window,'backend',SimpleNamespace(close=lambda:None,activate=lambda t:None,capture=lambda t:(Image.new('RGB',(40,30),'blue'),(0,0,40,30))))
+    monkeypatch.setattr(window,'run_task',lambda work,done:done(work(),None))
+    window.retake_image(new_step=True)
+    assert len(window.project.steps)==3
+    assert window.project.steps[0].image==original
+    assert window.project.steps[1].id==window.current_step().id
+    assert window.project.steps[2].id==last.id
+    window.undo();assert [s.id for s in window.project.steps]==[first.id,last.id]
+    window.steps_list.setCurrentRow(0)
+    window.retake_image()
+    assert len(window.project.steps)==2
+    assert window.project.steps[0].id==first.id
+    assert window.project.steps[0].image!=original
+    window.undo();assert window.project.steps[0].image==original
+    window.close()
+
+
 @pytest.mark.parametrize("selected,expected", [(0, ["First", "New step", "Last"]), (-1, ["First", "Last", "New step"])])
 def test_add_step_after_selection_or_append(tmp_path, selected, expected):
     app = QApplication.instance() or QApplication([])

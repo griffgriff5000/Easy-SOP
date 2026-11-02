@@ -290,3 +290,12 @@ Full suite: **253 passed**, exit 0. Fresh app build passed. `scripts/smoke_froze
 
 Shortcuts now reference the bundled ICO directly, rather than an executable icon entry that might remain cached as Python. Existing versions require one manual 0.3.2 Setup installation because their broken handoff cannot install its own repair. Projects/settings remain separate.
 Final 0.3.2 Setup smoke passed current-user install, direct ICO shortcut paths and AppUserModelID, real update, reinstall and uninstall preserving personal-data markers. All seven logo sizes remain embedded in app, helper and Setup. Read-only review found the guard relocation correct; its harness quiet-mode finding was fixed before the successful frozen smoke.
+
+## Screenshot insertion and step ordering (0.3.3)
+
+New capture results insert immediately after the selected step, inherit its section and select the new step, so subsequent captures remain in order. No selection appends. Screenshot > Add screenshot below selected step preserves the original image/annotations; Retake this screenshot (replace) remains separate. New screenshot insertion supports Undo.
+
+The step list exposes Up, Down and Move to... controls. Move to... removes/inserts the selected step at a one-based position, retaining its identity, content and selection. Invalid moves and missing selection are ignored. Actual model.moveRows testing found and corrected a prior drag selection jump by preserving the selected item's stable UserRole ID through reorder. Undo restores ordering; saved project order round-trips.
+
+Five new regression cases first failed where appropriate and then passed. Full suite: **258 passed**, exit 0. Fresh application build passed. Native Windows UI render was inspected: the three movement buttons fit above the step list. A fresh read-only review found no blocking issues. A pre-existing capture path still defers authored-document preview invalidation until refresh; this release does not change that behavior.
+The packaged 0.3.3 main-app install-button smoke also passed successful update and failed-startup rollback. Setup compilation and all seven embedded logo sizes in app, helper and Setup passed.

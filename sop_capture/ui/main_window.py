@@ -551,10 +551,15 @@ class MainWindow(QMainWindow):
         splitter = QSplitter();self.editor_splitter = splitter
         steps = QWidget();steps_box = QVBoxLayout(steps);steps_box.setContentsMargins(0,0,0,0)
         step_actions = QHBoxLayout();step_actions.addWidget(button("Add step", self.add_step),1)
-        step_actions.addWidget(menu_button("Actions",[("Duplicate step",self.duplicate_step),("Delete step",self.delete_step),(None,None),("Move up",lambda:self.move_step(-1)),("Move down",lambda:self.move_step(1)),(None,None),("Group steps...",self.group_steps_dialog),("Rename section...",self.rename_section_dialog)]))
+        step_actions.addWidget(menu_button("Actions",[("Duplicate step",self.duplicate_step),("Delete step",self.delete_step),(None,None),("Move up",lambda:self.move_step(-1)),("Move down",lambda:self.move_step(1)),("Move to step...",self.move_step_dialog),(None,None),("Group steps...",self.group_steps_dialog),("Rename section...",self.rename_section_dialog)]))
         steps_box.addLayout(step_actions)
+        ordering=QHBoxLayout()
+        for label,callback in [("Up",lambda:self.move_step(-1)),("Down",lambda:self.move_step(1)),("Move to...",self.move_step_dialog)]:
+            control=button(label,callback);control.setToolTip("Move the selected step "+label.lower());ordering.addWidget(control)
+        steps_box.addLayout(ordering)
         self.steps_list = QListWidget();self.steps_list.setMinimumWidth(160);self.steps_list.setItemDelegate(ThumbnailDelegate(self.steps_list));self.steps_list.setIconSize(QSize(130,72));self.steps_list.setWordWrap(True)
         self.steps_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.steps_list.setDropIndicatorShown(True);self.steps_list.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.steps_list.currentRowChanged.connect(self._select_step);self.steps_list.model().rowsMoved.connect(self._list_reordered)
         steps_box.addWidget(self.steps_list,1);splitter.addWidget(steps)
         self.editor_panel = QWidget();workspace = QVBoxLayout(self.editor_panel);workspace.setContentsMargins(0,0,0,0);workspace.setSpacing(8)
@@ -563,7 +568,7 @@ class MainWindow(QMainWindow):
         self.canvas = AnnotationCanvas()
         self.canvas.changing.connect(self.checkpoint);self.canvas.changed.connect(self.edited)
         tools.addWidget(self.tool_picker)
-        tools.addWidget(menu_button("Screenshot",[("Replace screenshot...",self.replace_image),("Retake selected window",self.retake_image),("Save annotated PNG...",self.save_annotated),(None,None),("Remove last annotation",self.remove_annotation)]))
+        tools.addWidget(menu_button("Screenshot",[("Add screenshot below selected step",lambda:self.retake_image(new_step=True)),("Retake this screenshot (replace)",self.retake_image),("Replace screenshot from file...",self.replace_image),("Save annotated PNG...",self.save_annotated),(None,None),("Remove last annotation",self.remove_annotation)]))
         tools.addStretch()
         self.editor_zoom = QComboBox();self.editor_zoom.setAccessibleName("Screenshot zoom")
         for label,value in [("Fit",1),("125%",1.25),("150%",1.5),("200%",2)]:self.editor_zoom.addItem(label,value)
@@ -1324,25 +1329,34 @@ class MainWindow(QMainWindow):
         self.edited()
 
     def move_step(self, delta):
+        if self.current_step() is None:return
+        self.move_step_to(self.steps_list.currentRow()+delta)
+
+    def move_step_dialog(self):
+        if not self.current_step() or self.active or self.busy:return
+        position,accepted=QInputDialog.getInt(self,"Move step","New step position:",self.steps_list.currentRow()+1,1,len(self.project.steps))
+        if accepted:self.move_step_to(position-1)
+
+    def move_step_to(self, position):
         index = self.steps_list.currentRow()
-        if not self.project or not 0 <= index+delta < len(self.project.steps): return
+        if not self.project or self.active or self.busy or index<0 or not 0 <= position < len(self.project.steps) or index==position:return
         order = [s.id for s in self.project.steps]
-        order[index], order[index+delta] = order[index+delta], order[index]
+        order.insert(position,order.pop(index))
         self.reorder_steps(order)
-        self.steps_list.setCurrentRow(index+delta)
 
     def _list_reordered(self, *args):
         if not self.loading:
-            self.reorder_steps([self.steps_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self.steps_list.count())])
+            selected=self.steps_list.currentItem()
+            self.reorder_steps([self.steps_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self.steps_list.count())],selected.data(Qt.ItemDataRole.UserRole) if selected else None)
 
-    def reorder_steps(self, order):
+    def reorder_steps(self, order, selected_id=None):
         if not self.project or len(order) != len(self.project.steps) or set(order) != {s.id for s in self.project.steps}:
             raise ValueError("Step order must include each step once")
         self.checkpoint()
         steps = {s.id: s for s in self.project.steps}
         selected = self.current_step()
         self.project.steps = [steps[identity] for identity in order]
-        self._refresh_steps(selected.id if selected else None)
+        self._refresh_steps(selected_id or (selected.id if selected else None))
         self.edited()
 
     def _marker_toggled(self, checked):
@@ -1575,10 +1589,12 @@ class MainWindow(QMainWindow):
 
     def _captured(self, result):
         try:
-            step = Step(title=f"Step {len(self.project.steps)+1}", marker=result.marker, button=result.button,
+            selected = self.current_step()
+            position = self.project.steps.index(selected)+1 if selected else len(self.project.steps)
+            step = Step(title=f"Step {position+1}", section=selected.section if selected else "", marker=result.marker, button=result.button,
                         timestamp=result.timestamp, capture_bounds=list(result.bounds), frame_age_ms=result.frame_age_ms)
             step.image = self.store.add_image(result.image, step.id, self.settings.value("compression"))
-            self.project.steps.append(step)
+            self.project.steps.insert(position, step)
             self.flush_save()
             self._refresh_steps(step.id)
         except Exception as exc:
@@ -1598,9 +1614,9 @@ class MainWindow(QMainWindow):
         self.pause_button.setText(label)
         self.float_pause.setText(label)
 
-    def retake_image(self):
+    def retake_image(self, new_step=False):
         step = self.current_step()
-        if not step or not self.target or self.active or self.busy:
+        if not self.project or (not step and not new_step) or not self.target or self.active or self.busy:
             self.notice("Select a target on the Capture page before retaking")
             return
         self.showMinimized()
@@ -1617,6 +1633,11 @@ class MainWindow(QMainWindow):
         def finished(value, error):
             self.showNormal()
             if error: self.fail(error)
+            elif new_step:
+                from ..capture import CaptureResult
+                if step and step in self.project.steps:self.steps_list.setCurrentRow(self.project.steps.index(step))
+                self.checkpoint()
+                self._captured(CaptureResult(image=value[0],bounds=value[1],marker=None,button=None,timestamp=datetime.now().astimezone().isoformat()))
             else: self._replace_step_image(step, value[0])
         self.run_task(capture, finished)
 

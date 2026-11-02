@@ -25,8 +25,8 @@ The recommended user download is the versioned Windows x64 Setup.exe asset, not 
 4. Install the official signed [Inno Setup compiler](https://jrsoftware.org/isdl.php) (tested with 7.1.1 x64), then build and verify Setup from that same ZIP:
 
    ```powershell
-   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.2-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
-   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.2-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/package_installer.py dist/releases/SOPCaptureStudio-0.3.3-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
+   python scripts/smoke_installer.py dist/releases/SOPCaptureStudio-0.3.3-Windows-x64.zip --compiler "C:\path\to\ISCC.exe"
    ```
 
    The smoke uses a unique uninstall registration and unique shortcut names, installs to a temporary directory with spaces, updates the actual installed App folder, and uninstalls while checking an untracked personal-file sentinel survives. It does not replace real app shortcuts.

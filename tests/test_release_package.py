@@ -27,3 +27,11 @@ def test_install_metadata_declares_pdf_import_dependency():
     assert any(item.startswith('pdfplumber') for item in data['project']['dependencies'])
     from sop_capture import __version__
     assert data['project']['version']==__version__
+
+
+def test_training_video_session_metadata_is_private_release_data(tmp_path,monkeypatch):
+    build=tmp_path/'build';folder=build/'_internal'/'Training video';folder.mkdir(parents=True)
+    (build/'SOPCaptureStudio.exe').write_bytes(b'app');(build/'SOPCaptureUpdater.exe').write_bytes(b'helper')
+    (folder/'video.json').write_text('{}')
+    monkeypatch.setattr(module,'RUNTIME',())
+    with pytest.raises(ValueError,match='Private application data'):module.package(build,tmp_path/'output','0.3.4')

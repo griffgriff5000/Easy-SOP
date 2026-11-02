@@ -130,6 +130,8 @@ class MainWindow(QMainWindow):
         self.annotation_nav=button('Annotation library',lambda:self.show_page(6));self.annotation_nav.setCheckable(True);self.nav_group.addButton(self.annotation_nav);side.addWidget(self.annotation_nav)
         self.nav_buttons.extend([self.home_nav,self.annotation_nav])
         self.revision_nav=button('Revise document',lambda:self.show_page(7));self.revision_nav.setCheckable(True);self.nav_group.addButton(self.revision_nav);side.addWidget(self.revision_nav);self.nav_buttons.append(self.revision_nav)
+        self.video_nav=button('Training video',lambda:self.show_page(8));self.video_nav.setCheckable(True);self.nav_group.addButton(self.video_nav);side.addWidget(self.video_nav);self.nav_buttons.append(self.video_nav)
+        side.removeWidget(self.video_nav);side.insertWidget(side.indexOf(self.nav_buttons[4]),self.video_nav)
         side.removeWidget(self.revision_nav);side.insertWidget(side.indexOf(self.nav_buttons[4]),self.revision_nav)
         side.removeWidget(self.nav_buttons[3]);side.addWidget(self.nav_buttons[3])
         for before,title in [(self.nav_buttons[0],'CREATE AND EDIT'),(self.nav_buttons[4],'REUSABLE LIBRARIES')]:
@@ -163,6 +165,9 @@ class MainWindow(QMainWindow):
         self.annotation_library_page.use_requested.connect(self.use_library_annotation)
         from .revision_page import RevisionPage
         self.revision_page=RevisionPage(self.template_library,self.run_task);self.pages.addWidget(self.revision_page)
+        from .training_video import TrainingVideoPage
+        self.video_page=TrainingVideoPage(lambda:not (self.active or self.busy or self.builder_preview.running),self)
+        self.pages.addWidget(self.video_page)
         layout.addWidget(sidebar)
         layout.addWidget(self.pages, 1)
         self.setCentralWidget(root)
@@ -470,7 +475,7 @@ class MainWindow(QMainWindow):
         from ..update_install import prepare_handoff
         from ..storage import atomic_bytes
         if not getattr(sys,'frozen',False):raise ValueError('Automatic installation is available in the Windows release, not a source checkout.')
-        if self.active or self.busy or self.builder_preview.running:raise ValueError('Finish recording or the current document/export operation before installing.')
+        if self.active or self.busy or self.builder_preview.running or self.video_page.busy:raise ValueError('Finish recording or the current document/export operation before installing.')
         if QMessageBox.question(self,'Install and restart',f'Save your work, install version {version} and restart? The previous app folder will be retained. Projects and library data remain separate.',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return False
         plan,runner,token=prepare_handoff(staged,Path(sys.executable).resolve().parent,__version__,version,os.getpid())
         process=subprocess.Popen([str(runner),'--plan',str(plan)],cwd=str(runner.parent),creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),close_fds=True)
@@ -741,6 +746,7 @@ class MainWindow(QMainWindow):
         self.nav_buttons[index].setChecked(True)
         if index==5:self._refresh_home()
         if index==6:self.annotation_library_page.refresh()
+        if index==8:self.video_page.activate()
         if index==2:QTimer.singleShot(0,self._maybe_builder_preview)
         page = self.pages.widget(index)
         if isinstance(page, QScrollArea):
@@ -1536,6 +1542,7 @@ class MainWindow(QMainWindow):
 
     def start_capture(self):
         if not self.project or not self.target or self.active or self.busy: return
+        if self.video_page.busy:self.notice('Stop training video recording or finish its export first.');return
         try:
             self.flush_save()
             parse_hotkey(self.settings.value("shortcut"))
@@ -1777,6 +1784,8 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
     def closeEvent(self, event):
+        if self.video_page.busy:
+            self.notice('Stop training video recording or cancel its export before closing.');event.ignore();return
         if self.active:
             self.stop_capture()
             self.notice("Capture is finishing. Close the app again after it has stopped.")
@@ -1792,6 +1801,7 @@ class MainWindow(QMainWindow):
             if not self.revision_page.close_session():event.ignore();return
             self.flush_save()
             self.word_editor.close_document()
+            self.video_page.prepare_close()
             self.builder_preview.clear_document()
             if hasattr(self,'workspaces'):self.workspaces.close()
             # Windows holds each preview file open until its document closes.

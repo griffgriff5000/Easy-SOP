@@ -27,7 +27,7 @@ def owned_installation(install,version):
     if any(p.name.casefold() not in allowed for p in install.iterdir()):raise ValueError('The application folder contains extra files. Move projects/personal files out before updating, or install manually in a new folder.')
     for path in install.rglob('*'):
         if path.is_symlink() or (hasattr(path,'is_junction') and path.is_junction()):raise ValueError('Links/junctions inside the application folder require a manual update.')
-        if path.name.casefold() in {'project.json','revision.json','project.backup.json'} or path.suffix.lower()=='.sopannotation':raise ValueError('Project/library data was found inside the application folder. Automatic replacement was refused.')
+        if path.name.casefold() in {'project.json','revision.json','project.backup.json','video.json'} or path.suffix.lower()=='.sopannotation':raise ValueError('Project/library data was found inside the application folder. Automatic replacement was refused.')
 
 
 def validate_plan(path):

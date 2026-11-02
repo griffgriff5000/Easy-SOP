@@ -2,6 +2,14 @@
 
 A local Windows desktop application for recording a selected application's mouse interactions, editing illustrated procedure steps and exporting an A4 SOP PDF. Python 3.12+, PySide6, Pillow and ReportLab. No cloud service, API key or account is required.
 
+## Training video (source update)
+
+The **Training video** workspace records a screen or window with optional microphone narration. Create a video session in your chosen folder, select the source and microphone, then record using the visible pause/stop controls. Opening the workspace does not activate a microphone. The three-second microphone test records and plays a local test file.
+
+Record a voiceover afterwards while watching the original, preview the combined tracks, trim start/end, adjust audio volume and export a separate MP4. Originals and earlier takes are retained. Each video has its own folder and `video.json`; **Open video session** reopens it independently of SOP projects. The workspace layout is customizable. Stop/finalize recording or cancel export before closing/updating the app.
+
+This source feature has not been published in a new installer. Development installs need `imageio-ffmpeg` from requirements; packaged builds include its separate FFmpeg executable and Qt Multimedia plugins. See [FFmpeg redistribution notes](docs/FFMPEG.md) before publishing a video-enabled installer. Hardware microphone input should be checked with **Test microphone** on the user's PC.
+
 ## Download the Windows application
 
 Download the ready-to-run app from **[GitHub Releases](https://github.com/griffgriff5000/Easy-SOP/releases/latest)**. The repository is public; no GitHub sign-in is needed.

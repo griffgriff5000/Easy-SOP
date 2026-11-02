@@ -6,6 +6,13 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QListWidget, QT
 
 
 TOPICS = {
+    "Training video": """<h1>Training videos and narration</h1>
+<p>Open <b>Training video</b> in the sidebar. Choose <b>New video</b>, enter a name and select a parent folder. Each video has its own folder; <b>Open video session</b> reopens its video.json file.</p>
+<p>Select a screen or application window. Leave <b>No microphone</b> selected for silent video, or select your microphone for live narration. <b>Test microphone</b> explicitly records three seconds and plays the result; the test file is retained in the video folder. No microphone is opened merely by visiting this screen.</p>
+<p>Press <b>Record video</b>. The floating controls pause/resume or stop recording. Wait for finalization before closing the app. Originals and earlier takes remain in the folder.</p>
+<p>To narrate afterwards, wait until the recording has loaded, select a microphone and press <b>Record voiceover while watching</b>. The video plays from the beginning. Pause/resume affects both tracks. If video playback fails, narration stops and the prior take remains selected.</p>
+<p>Use Play/pause and the position slider to preview. Select <b>Use recorded voiceover</b> to replace original audio, set trim start/end in seconds and adjust audio volume. End of recording uses the full remaining video. Trimming is applied to both tracks on export.</p>
+<p><b>Export MP4</b> writes a separate file. Short narration is padded with silence so the video is not shortened. Cancel or failed export retains originals and any existing output. Processing stays local.</p>""",
     "Application updates": """<h1>Install a newer app version</h1>
 <p>Open <b>Help &gt; Check for updates</b>. Checks use the public GitHub stable release and send no document/project content. Download the offered Windows update; progress and cancellation are available. After verification, choose <b>Install and restart</b> and confirm.</p>
 <p>Finish recording or document/export jobs first. Normal Word/project save and close checks run before installation; if closing fails, replacement is cancelled. The complete app folder is replaced by a separate helper after the old process exits. The preceding folder is retained; failed new startup is rolled back when the new process has exited. No Windows elevation or policy bypass is used.</p>

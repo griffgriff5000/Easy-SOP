@@ -115,6 +115,14 @@ def test_refuse_data_in_installation_and_overlapping_paths(tmp_path):
     with pytest.raises(ValueError):validate_plan(path)
 
 
+def test_updater_refuses_training_video_sessions_inside_runtime(tmp_path):
+    path,install,stage=setup(tmp_path)
+    folder=install/'_internal'/'My training video';folder.mkdir()
+    (folder/'video.json').write_text('{}')
+    with pytest.raises(ValueError,match='Project/library data'):validate_plan(path)
+    assert (install/'SOPCaptureStudio.exe').read_bytes()==b'old'
+
+
 def test_cancelled_confirmation_does_not_wait_or_replace(tmp_path):
     path,install,stage=setup(tmp_path);plan=json.loads(path.read_text());plan.update(requires_confirmation=True,archive=str(path.parent/'SOPCaptureStudio-0.2.0-Windows-x64.zip'),sha256='0'*64);path.write_text(json.dumps(plan));(path.parent/'cancelled.json').write_text('{}')
     def must_not_wait(plan):raise AssertionError('Should not reach installation')

@@ -9,8 +9,8 @@ import tomllib
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-PRIVATE_NAMES={'project.json','project.backup.json','revision.json','recent-projects.json','workspace-layouts.json','profile.json'}
-RUNTIME=('PySide6','PySide6_Essentials','PySide6_Addons','PySide6_Pdf','PySide6_WebEngine','shiboken6','Pillow','reportlab','python-docx','lxml','pdfplumber','pdfminer.six','pypdfium2','cryptography','cffi','pycparser','charset-normalizer','pywin32')
+PRIVATE_NAMES={'project.json','project.backup.json','revision.json','recent-projects.json','workspace-layouts.json','profile.json','video.json'}
+RUNTIME=('PySide6','PySide6_Essentials','PySide6_Addons','PySide6_Pdf','PySide6_WebEngine','shiboken6','Pillow','reportlab','python-docx','lxml','pdfplumber','pdfminer.six','pypdfium2','cryptography','cffi','pycparser','charset-normalizer','pywin32','imageio-ffmpeg')
 QUICK_START='''SOP Capture Studio — Windows x64
 
 Recommended: download the versioned Windows x64 Setup.exe from GitHub Releases.
@@ -56,6 +56,9 @@ def package(build,output,version,licenses=None):
         for path in files:bundle.write(path,prefix+path.relative_to(build).as_posix())
         bundle.write(ROOT/'LICENSE',prefix+'LICENSE.txt');bundle.writestr(prefix+'START_HERE.txt',QUICK_START)
         bundle.writestr(prefix+'RELEASE.json',json.dumps({'app':'SOPCaptureStudio','version':version}))
+        if any('imageio_ffmpeg' in path.parts for path in files):
+            bundle.write(ROOT/'docs/FFMPEG.md',prefix+'licenses/ffmpeg/README.md')
+            bundle.write(ROOT/'docs/licenses/FFmpeg-GPL-3.0.txt',prefix+'licenses/ffmpeg/COPYING.GPLv3')
         for name in RUNTIME:
             try:dist=metadata.distribution(name)
             except metadata.PackageNotFoundError:continue

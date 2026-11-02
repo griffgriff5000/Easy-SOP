@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QSplitter,QScrollA
 from ..workspace_layouts import LayoutLibrary
 from .workspaces import DockWorkspace,WorkspaceManager
 
-SCREENS={0:('capture','Capture'),1:('editor','Step editor'),2:('document','Document'),3:('settings','Settings'),4:('templates','Template library'),5:('home','Home'),6:('annotations','Annotation library'),7:('revision','Document review')}
+SCREENS={0:('capture','Capture'),1:('editor','Step editor'),2:('document','Document'),3:('settings','Settings'),4:('templates','Template library'),5:('home','Home'),6:('annotations','Annotation library'),7:('revision','Document review'),8:('video','Training video')}
 
 
 def wrap(page,key):
@@ -24,7 +24,7 @@ def wrap(page,key):
     host=DockWorkspace(key,holder,page);host.style_target=page;layout.addWidget(host,1)
     if tools:
         widget=QWidget();widget.setLayout(tools.layout());host.add_panel('tools','Screen actions',widget,'top')
-        if key in {'capture','editor','revision'}:host.panels['tools'].hide()
+        if key in {'capture','editor','revision','video'}:host.panels['tools'].hide()
     return host
 
 
@@ -35,7 +35,7 @@ def panel_from_splitter(host,role,title,widget,area):
 def install_workspaces(window,library=None):
     if library is None:library=LayoutLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'workspace-layouts.json')
     manager=WorkspaceManager(library,window);window.workspaces=manager;window.workspace_keys={i:key for i,(key,title) in SCREENS.items()}
-    global_defaults={0:['new','open','capture_start','capture_stop'],1:['undo','redo','add_step','duplicate_step','annotation_studio','export_pdf'],2:['save','review','preview_pdf','export_word'],3:['shortcuts'],4:[],5:['new','open'],6:['annotation_studio'],7:['screen_new','screen_open','undo','redo','screen_export']}
+    global_defaults={0:['new','open','capture_start','capture_stop'],1:['undo','redo','add_step','duplicate_step','annotation_studio','export_pdf'],2:['save','review','preview_pdf','export_word'],3:['shortcuts'],4:[],5:['new','open'],6:['annotation_studio'],7:['screen_new','screen_open','undo','redo','screen_export'],8:['screen_new','screen_open','screen_record','screen_stop']}
     for index,(key,title) in SCREENS.items():
         page=window.settings if index==3 else window.pages.widget(index);host=wrap(page,key);host.global_dark=window.settings.value('theme')=='Dark'
         if index==0:panel_from_splitter(host,'outline','Application windows',window.windows_list,'left')
@@ -50,6 +50,7 @@ def install_workspaces(window,library=None):
         elif index==2:panel_from_splitter(host,'properties','Document fields and template text',window.builder_edit_tabs,'right');window.builder_edit_tabs.setMinimumWidth(250)
         elif index==4:panel_from_splitter(host,'outline','Saved templates',window.templates_page.catalogue,'left')
         elif index==6:panel_from_splitter(host,'outline','Saved annotations',window.annotation_library_page.entries,'left')
+        elif index==8:panel_from_splitter(host,'properties','Recording and voiceover',window.video_page.controls_scroll,'left')
         elif index==7:
             revision=window.revision_page
             panel_from_splitter(host,'outline','Source elements',revision.sources,'top');revision.sources.setMaximumHeight(110)
@@ -79,7 +80,7 @@ def install_workspaces(window,library=None):
             page.layout().insertLayout(2,stages)
         actions={}
         navigation={identity for identity in window.action_bindings if identity.startswith('page_')}|{'help','shortcuts'}
-        allowed={0:{'new','open','save','capture_start','capture_pause','capture_stop'},1:set(window.action_bindings),2:{'new','open','save','undo','redo','review','preview_pdf','export_pdf','export_word'},3:{'annotation_studio'},4:set(),5:{'new','open'},6:{'annotation_studio'},7:{'undo','redo'}}[index]|navigation
+        allowed={0:{'new','open','save','capture_start','capture_pause','capture_stop'},1:set(window.action_bindings),2:{'new','open','save','undo','redo','review','preview_pdf','export_pdf','export_word'},3:{'annotation_studio'},4:set(),5:{'new','open'},6:{'annotation_studio'},7:{'undo','redo'},8:set()}[index]|navigation
         for identity,existing in window.action_bindings.items():
             if identity not in allowed:continue
             action=QAction(existing.text(),host);action.triggered.connect(lambda checked=False,i=identity:window.action_bindings[i].trigger());actions[identity]=action
@@ -96,6 +97,10 @@ def install_workspaces(window,library=None):
         if index==7:
             for identity,label,callback in [('screen_new','New revision',revision.new),('screen_open','Open revision',revision.open),('undo','Undo transfer',revision.undo),('redo','Redo transfer',revision.redo),('screen_export','Export revised Word',revision.export),('screen_original','Original pages',revision.original_pages)]:
                 action=QAction(label,host);action.triggered.connect(callback);actions[identity]=action
+        if index==8:
+            video=window.video_page
+            for identity,label,callback in [('screen_new','New video',video.new_session),('screen_open','Open video session',video.open_session),('screen_record','Record video',video.record_video),('screen_stop','Stop recording',video.stop_recording),('screen_export','Export MP4',video.export)]:
+                action=QAction(label,host);action.triggered.connect(callback);actions[identity]=action
         if index in {2,7}:
             editor=window.word_editor if index==2 else window.revision_page.word_editor
             for item in editor.edit_buttons[3:]:item.hide()
@@ -103,7 +108,7 @@ def install_workspaces(window,library=None):
                 action=QAction(label,host);action.triggered.connect(lambda checked=False,e=editor,c=command:e._command(c) if e.session else None);actions[identity]=action
         host.set_actions(actions,global_defaults[index]);host.appearance()
         if 'outline' in host.panels:host.resizeDocks([host.panels['outline']],[190],Qt.Orientation.Horizontal)
-        if 'properties' in host.panels:host.resizeDocks([host.panels['properties']],[410 if index==7 else 270],Qt.Orientation.Horizontal)
+        if 'properties' in host.panels:host.resizeDocks([host.panels['properties']],[410 if index==7 else 350 if index==8 else 270],Qt.Orientation.Horizontal)
         if index==7:host.resizeDocks([host.panels['outline']],[100],Qt.Orientation.Vertical)
         manager.register(key,title,host)
     menu=window.menuBar().addMenu('Workspace');window.workspace_menu=menu

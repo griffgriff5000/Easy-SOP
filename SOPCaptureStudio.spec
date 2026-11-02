@@ -3,8 +3,9 @@ from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('reportlab', includes=['fonts/*'])
 datas += [('sop_capture/assets/app.ico', 'sop_capture/assets')]
+datas += collect_data_files('imageio_ffmpeg', includes=['binaries/*'])
 a = Analysis(['run_studio.py'], pathex=[], binaries=[], datas=datas,
-             hiddenimports=['PySide6.QtPdf', 'PySide6.QtPdfWidgets', 'win32com.client', 'win32timezone'],
+             hiddenimports=['PySide6.QtPdf', 'PySide6.QtPdfWidgets', 'PySide6.QtMultimedia', 'PySide6.QtMultimediaWidgets', 'win32com.client', 'win32timezone'],
              hookspath=[], hooksconfig={}, runtime_hooks=[],
              excludes=['PySide6.QtWebEngineCore', 'PySide6.QtWebEngineWidgets', 'PySide6.QtQml', 'PySide6.QtQuick'],
              noarchive=False)

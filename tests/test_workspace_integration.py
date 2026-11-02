@@ -45,3 +45,21 @@ def test_copy_does_not_add_sop_edit_commands_to_document_review(tmp_path):
     assert 'add_step' not in review.actions and 'add_step' not in review.toolbar_ids
     assert 'screen_export' in review.toolbar_ids
     window.close();window.deleteLater()
+
+
+def test_video_editor_action_visible_and_existing_layouts_migrate_once(tmp_path,monkeypatch):
+    from sop_capture.ui.training_video import TrainingVideoPage
+    calls=[];monkeypatch.setattr(TrainingVideoPage,'edit_video',lambda self:calls.append('edit'))
+    library=LayoutLibrary(tmp_path/'video-layouts.json');window=MainWindow(layout_library=library)
+    host=window.workspaces.hosts['video']
+    assert 'screen_edit' in host.toolbar_ids
+    host.actions['screen_edit'].trigger();assert calls==['edit']
+    old=host.capture();old['toolbar']=['screen_new','screen_open','screen_record','screen_stop'];old['available_actions'].remove('screen_edit')
+    library.save_screen('video',old);window.close();window.deleteLater()
+    reopened=MainWindow(layout_library=library);host=reopened.workspaces.hosts['video']
+    assert host.toolbar_ids==['screen_new','screen_open','screen_edit','screen_record','screen_stop']
+    host.set_toolbar([identity for identity in host.toolbar_ids if identity!='screen_edit'])
+    reopened.workspaces.save('video');reopened.close();reopened.deleteLater()
+    custom=MainWindow(layout_library=library)
+    assert 'screen_edit' not in custom.workspaces.hosts['video'].toolbar_ids
+    custom.close();custom.deleteLater()

@@ -35,7 +35,7 @@ def panel_from_splitter(host,role,title,widget,area):
 def install_workspaces(window,library=None):
     if library is None:library=LayoutLibrary(Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))/'workspace-layouts.json')
     manager=WorkspaceManager(library,window);window.workspaces=manager;window.workspace_keys={i:key for i,(key,title) in SCREENS.items()}
-    global_defaults={0:['new','open','capture_start','capture_stop'],1:['undo','redo','add_step','duplicate_step','annotation_studio','export_pdf'],2:['save','review','preview_pdf','export_word'],3:['shortcuts'],4:[],5:['new','open'],6:['annotation_studio'],7:['screen_new','screen_open','undo','redo','screen_export'],8:['screen_new','screen_open','screen_record','screen_stop']}
+    global_defaults={0:['new','open','capture_start','capture_stop'],1:['undo','redo','add_step','duplicate_step','annotation_studio','export_pdf'],2:['save','review','preview_pdf','export_word'],3:['shortcuts'],4:[],5:['new','open'],6:['annotation_studio'],7:['screen_new','screen_open','undo','redo','screen_export'],8:['screen_new','screen_open','screen_edit','screen_record','screen_stop']}
     for index,(key,title) in SCREENS.items():
         page=window.settings if index==3 else window.pages.widget(index);host=wrap(page,key);host.global_dark=window.settings.value('theme')=='Dark'
         if index==0:panel_from_splitter(host,'outline','Application windows',window.windows_list,'left')
@@ -99,7 +99,7 @@ def install_workspaces(window,library=None):
                 action=QAction(label,host);action.triggered.connect(callback);actions[identity]=action
         if index==8:
             video=window.video_page
-            for identity,label,callback in [('screen_new','New video',video.new_session),('screen_open','Open video session',video.open_session),('screen_record','Record video',video.record_video),('screen_stop','Stop recording',video.stop_recording),('screen_export','Export MP4',video.export)]:
+            for identity,label,callback in [('screen_new','New video',video.new_session),('screen_open','Open video session',video.open_session),('screen_edit','Edit video...',video.edit_video),('screen_record','Record video',video.record_video),('screen_stop','Stop recording',video.stop_recording),('screen_export','Export MP4',video.export)]:
                 action=QAction(label,host);action.triggered.connect(callback);actions[identity]=action
         if index in {2,7}:
             editor=window.word_editor if index==2 else window.revision_page.word_editor
@@ -110,7 +110,14 @@ def install_workspaces(window,library=None):
         if 'outline' in host.panels:host.resizeDocks([host.panels['outline']],[190],Qt.Orientation.Horizontal)
         if 'properties' in host.panels:host.resizeDocks([host.panels['properties']],[410 if index==7 else 350 if index==8 else 270],Qt.Orientation.Horizontal)
         if index==7:host.resizeDocks([host.panels['outline']],[100],Qt.Orientation.Vertical)
+        previous=manager.library.screen(key)
         manager.register(key,title,host)
+        # Introduce the editor once for layouts saved before this command existed.
+        # Subsequent user choices to hide it remain respected.
+        if index==8 and previous and 'screen_edit' not in previous['available_actions']:
+            toolbar=list(host.toolbar_ids)
+            position=toolbar.index('screen_open')+1 if 'screen_open' in toolbar else 0
+            toolbar.insert(position,'screen_edit');host.set_toolbar(toolbar)
     menu=window.menuBar().addMenu('Workspace');window.workspace_menu=menu
     menu.addAction('Customise this workspace…',manager.show_dialog)
     panels_menu=menu.addMenu('Show / hide panels')

@@ -36,7 +36,9 @@ class TemplatesPage(QWidget):
         self.logo=QLineEdit();self.logo.textChanged.connect(self._edited)
         logo_row=QHBoxLayout();logo_row.addWidget(self.logo,1);logo_row.addWidget(self._button("Browse...",self.choose_logo));logo_row.addWidget(self._button("Clear",self.logo.clear));form.addRow("Default logo",logo_row)
         self.fields={};self._text(form,"company","Default company")
-        self._spin(form,"image_width_percent","Screenshot width (%)",30,100);self._check(form,"page_per_step","One step per page")
+        self._spin(form,"image_width_percent","Screenshot width (%)",30,100)
+        from .screenshot_layout import ScreenshotLayoutControls
+        self.screenshot_layout=ScreenshotLayoutControls();self.screenshot_layout.changed.connect(self._edited);form.addRow(self.screenshot_layout)
         self.pdf_group,pdf=form_page();self.template_tabs.addTab(scroll_panel(self.pdf_group),"Appearance")
         self._combo(pdf,"font","Font family",["Vera","Helvetica","Times-Roman","Courier"])
         for key,label,lo,hi in [("body_size","Body text (pt)",7,18),("heading_size","Step headings (pt)",10,30),("title_size","Cover title (pt)",18,44)]:self._spin(pdf,key,label,lo,hi)
@@ -104,6 +106,7 @@ class TemplatesPage(QWidget):
         settings = appearance()
         for key, field in self.fields.items():
             settings[key] = field.value() if isinstance(field, QSpinBox) else field.isChecked() if isinstance(field, QCheckBox) else field.currentText() if isinstance(field, QComboBox) else field.text()
+        settings.update(self.screenshot_layout.values())
         return appearance(settings)
 
     def refresh(self, identity="standard"):
@@ -138,6 +141,7 @@ class TemplatesPage(QWidget):
         self.name.setText(profile["name"])
         self.logo.setText(str(logo) if logo else "")
         settings = appearance(profile["settings"])
+        self.screenshot_layout.set_values(settings)
         styles = inspect_docx(self.source_docx)["styles"] if self.source_docx else ["Heading 2", "Normal", "Caption"]
         for key in ("title_style", "heading_style", "body_style", "caption_style"):
             self.fields[key].clear()

@@ -299,3 +299,13 @@ The step list exposes Up, Down and Move to... controls. Move to... removes/inser
 
 Five new regression cases first failed where appropriate and then passed. Full suite: **258 passed**, exit 0. Fresh application build passed. Native Windows UI render was inspected: the three movement buttons fit above the step list. A fresh read-only review found no blocking issues. A pre-existing capture path still defers authored-document preview invalidation until refresh; this release does not change that behavior.
 The packaged 0.3.3 main-app install-button smoke also passed successful update and failed-startup rollback. Setup compilation and all seven embedded logo sizes in app, helper and Setup passed.
+
+## Configurable screenshot page layout (source update)
+
+Document > Layout and the template editor share Automatic/1/2/3/4/6 screenshots per page plus Vertical/Grid choices. Grid uses two columns; Automatic Grid groups up to four screenshots. The count limits screenshots, not text-only instructions, and long content can add pages. Legacy page_per_step settings load as one per page; explicit new Automatic overrides the legacy flag. Project choices persist independently and support Undo; template defaults save and reload.
+
+The same grouping is used by standard PDF and generated Word content. Existing Word company covers/headers/tables and following content are retained. Directly authored document exports remain byte-identical until explicitly rebuilt. Native PDF grids split long cells without losing screenshots or text; Word cells remain free to flow rather than clipping.
+
+Full automated suite: 279 passed. Added coverage for every explicit PDF count in Vertical/Grid, settings validation/migration, mixed screenshot/text-only grouping, long instructions, project/template round-trips, authored-document preservation and imported template structure. The existing legacy section/page-break regression also passes.
+
+Fresh read-only review and desktop Word rendering exposed and corrected a duplicate cover break and a separated Procedure heading. Word rerender confirmed a two-page cover/sample without a blank page and Procedure with its first screenshot in both modes. A long-cell probe retained all 600 repeated segments plus end marker and company content. Native PDF and Word-converted PDF samples for Vertical (two) and Grid (four) were rendered and visually inspected successfully under .superpowers/layout-visual. No installer version bump or release has been produced for this source-only update.

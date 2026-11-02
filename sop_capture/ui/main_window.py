@@ -698,6 +698,10 @@ class MainWindow(QMainWindow):
                 else:
                     field=QLineEdit();field.textChanged.connect(self._document_changed)
                 self.document_fields[name]=field;self.document_field_tabs[name]=index;form.addRow(label,field)
+        from .screenshot_layout import ScreenshotLayoutControls
+        self.document_layout=ScreenshotLayoutControls()
+        self.document_layout.changed.connect(self._document_layout_changed)
+        self.document_tabs.addTab(scroll_panel(self.document_layout),'Layout')
         content,form=form_page();self.branding_tab=self.document_tabs.addTab(scroll_panel(content),"Branding")
         logo=QWidget();logo_row=QVBoxLayout(logo);logo_row.setContentsMargins(0,0,0,0)
         self.logo_label=QLabel("No logo");self.logo_label.setWordWrap(True);logo_row.addWidget(self.logo_label)
@@ -1101,6 +1105,7 @@ class MainWindow(QMainWindow):
         self.marker_size.setValue(self.project.marker_size)
         self.marker_numbers.setChecked(self.project.marker_numbers)
         self.logo_label.setText(self.project.logo or "No logo")
+        self.document_layout.set_values(self.project.template.get('settings',{}))
         self.loading = False
         self._refresh_steps()
 
@@ -1297,6 +1302,16 @@ class MainWindow(QMainWindow):
         for name, widget in self.document_fields.items():
             value = widget.currentText() if isinstance(widget, QComboBox) else widget.toPlainText() if isinstance(widget, QPlainTextEdit) else widget.text()
             setattr(self.project, name, value)
+        self.edited()
+
+    def _document_layout_changed(self):
+        if self.loading or not self.project:return
+        from ..templates import appearance,standard_profile
+        template=deepcopy(self.project.template or standard_profile())
+        settings=appearance(template.get('settings',{}))
+        settings.update(self.document_layout.values());settings['page_per_step']=False
+        if settings==template.get('settings'):return
+        self.checkpoint();template['settings']=settings;self.project.template=template
         self.edited()
 
     def add_step(self):

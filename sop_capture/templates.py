@@ -12,6 +12,7 @@ DEFAULT_APPEARANCE = {
     "font": "Vera", "body_size": 9, "heading_size": 16, "title_size": 29,
     "heading_color": "#15344b", "text_color": "#183247", "margin_mm": 20,
     "image_width_percent": 100, "page_per_step": False, "cover": True,
+    "screenshots_per_page": 0, "screenshot_layout": "vertical",
     "header": "", "footer": "SOP Capture Studio", "company": "",
     "orientation": "project", "heading_style": "Heading 2", "body_style": "Normal", "caption_style": "Caption",
     "title_style": "Title",
@@ -21,6 +22,11 @@ DEFAULT_APPEARANCE = {
 def appearance(values=None):
     if not isinstance(values or {}, dict): raise ValueError("Invalid template appearance")
     result = DEFAULT_APPEARANCE | (values or {})
+    if 'screenshots_per_page' not in (values or {}) and result['page_per_step']:
+        result['screenshots_per_page']=1
+    if type(result['screenshots_per_page']) is not int or result['screenshots_per_page'] not in {0,1,2,3,4,6}:
+        raise ValueError('Invalid screenshots per page')
+    if result['screenshot_layout'] not in {'vertical','grid'}:raise ValueError('Invalid screenshot layout')
     for key, low, high in (("body_size", 7, 18), ("heading_size", 10, 30), ("title_size", 18, 44), ("margin_mm", 10, 35), ("image_width_percent", 30, 100)):
         if not isinstance(result[key], (int, float)) or not low <= result[key] <= high:
             raise ValueError(f"Invalid template {key}")
@@ -30,6 +36,8 @@ def appearance(values=None):
         result[key] = "#%02x%02x%02x" % rgb[:3]
     for key in ("cover", "page_per_step"):
         if not isinstance(result[key], bool): raise ValueError(f"Invalid template {key}")
+    if 'screenshots_per_page' in (values or {}) and result['screenshots_per_page']!=1:
+        result['page_per_step']=False
     for key in ("header", "footer", "company", "heading_style", "body_style", "caption_style", "title_style"):
         if not isinstance(result[key], str) or len(result[key]) > 500: raise ValueError(f"Invalid template {key}")
     if result["orientation"] not in {"project", "portrait", "landscape"}: raise ValueError("Invalid template orientation")

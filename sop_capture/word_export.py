@@ -218,29 +218,9 @@ def export_docx(project, root, output):
     if structured and existing_procedure not in {'procedure','standard operating procedure','sop'}:
         paragraph('Procedure',style('title_style',heading),True)
     word_information(document, project.company_information, body, heading, generated)
-    previous_section = ""
-    for number, step in enumerate(project.steps, 1):
-        section_heading = None
-        if step.section and step.section != previous_section:
-            section_heading = paragraph(step.section, heading, True)
-        previous_section = step.section
-        from .word_template import numbered
-        step_text=step.title if prepared and numbered(document.styles[heading]) else f"{number:02d}  {step.title}"
-        title = paragraph(step_text, heading, True)
-        if settings["page_per_step"]:
-            (section_heading if section_heading is not None else title).paragraph_format.page_break_before = True
-        if step.image:
-            try:
-                image = render_step(root, step, number, project)
-                data = BytesIO()
-                image.save(data, "PNG")
-                data.seek(0)
-                ratio = min(width_inches/image.width, (max_height/914400)/image.height)
-                paragraph(keep=True).add_run().add_picture(data, width=Inches(image.width*ratio), height=Inches(image.height*ratio))
-                paragraph(f"Step {number} screenshot", caption, True)
-            except (OSError, ValueError): paragraph("Image unavailable — replace the screenshot in the editor.")
-        paragraph(step.description)
-        if step.notes: paragraph("Notes / warnings: "+step.notes)
+    from .word_layout import append_steps
+    procedure_heading=Paragraph(preceding,document._body) if existing_procedure in {'procedure','standard operating procedure','sop'} else None
+    append_steps(document,project,root,settings,paragraph,generated,heading,body,caption,prepared,section_width,max_height,procedure_heading)
     if not project.steps: paragraph("No procedural steps have been added.")
     if (not info["has_steps"] or (prepared and not structured)) and project.revision_history:
         paragraph("Revision history", heading, True)

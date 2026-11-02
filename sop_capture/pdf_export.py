@@ -82,7 +82,11 @@ def export_pdf(project, root, output, orientation=None):
         content("Procedure", heading)
         content("No procedural steps have been added.")
     previous_section = ""
-    for number, step in enumerate(project.steps, 1):
+    custom_layout=bool(settings['screenshots_per_page'] or settings['screenshot_layout']=='grid')
+    if custom_layout:
+        from .pdf_layout import screenshot_pages
+        story.extend(screenshot_pages(project,root,settings,doc,body,heading,small))
+    for number, step in enumerate([] if custom_layout else project.steps, 1):
         if settings["page_per_step"]: story.append(PageBreak())
         if step.section and step.section != previous_section:
             content(step.section, heading)

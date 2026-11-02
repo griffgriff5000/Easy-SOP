@@ -28,3 +28,5 @@ Artifacts:
 - ZIP: 115,360,477 bytes; SHA-256 7f8c78c12597f36dcf9e321a389b2d5f85e8e2284ca0f0281cdf682aec2d76b3
 
 The application is unsigned. Projects/settings/libraries remain separate. Existing 0.3.2+ clients can install through Help > Check for updates; earlier install-button versions need Setup manually once.
+
+Publication confirmed: https://github.com/griffgriff5000/Easy-SOP/releases/tag/v0.4.0 . All four uploaded assets were downloaded back and their SHA-256 digests matched local files before publishing. The public in-app update feed reports 0.4.0; the public Setup checksum sidecar matches the verified artifact.

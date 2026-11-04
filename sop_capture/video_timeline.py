@@ -33,6 +33,11 @@ def validate_timeline(session,sections):
             if section.get('narration'):session.asset(section['narration'])
             if not number(section.get('narration_origin'),0,section['source_duration']):raise ValueError('Invalid voiceover alignment.')
             if section['use_narration'] and not section.get('narration'):raise ValueError('Record a section voiceover first.')
+            if section.get('speech') is not None:
+                from .speech_runtime import validate_script
+                speech=section['speech']
+                if not isinstance(speech,dict) or set(speech)!={'script','voice','speed'}:raise ValueError('Invalid text-to-speech settings.')
+                validate_script(speech['script'],speech['voice'],speech['speed'])
         else:
             if not number(section.get('duration'),.1,120):raise ValueError('Card duration must be between 0.1 and 120 seconds.')
             if not isinstance(section.get('text'),str) or len(section['text'])>6000:raise ValueError('Card text is too long.')

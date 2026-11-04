@@ -2,7 +2,7 @@
 from pathlib import Path
 from copy import deepcopy
 from dataclasses import asdict
-import threading,tempfile,time
+import threading,tempfile,time,shutil
 from PIL import Image,ImageOps
 from PySide6.QtCore import Qt,QUrl,QTimer,Signal
 from PySide6.QtGui import QColor,QImage
@@ -67,6 +67,7 @@ class VideoEditorDialog(QDialog):
         self.apply_button=QPushButton('Apply section changes');self.apply_button.setObjectName('primary');self.apply_button.clicked.connect(self.apply_properties);form.addRow(self.apply_button)
         self.mic=QComboBox();self.mic.addItem('Select microphone...',None);form.addRow('Voiceover mic',self.mic)
         self.narrate_button=QPushButton('Record section voiceover');self.narrate_button.clicked.connect(self.record_narration);form.addRow(self.narrate_button)
+        self.speech_button=QPushButton('Text to speech...');self.speech_button.clicked.connect(self.open_speech);form.addRow(self.speech_button)
         self.pause_voice=QPushButton('Pause / resume voiceover');self.pause_voice.clicked.connect(lambda:self.recorder.pause());form.addRow(self.pause_voice)
         self.stop_voice=QPushButton('Stop voiceover');self.stop_voice.clicked.connect(lambda:self.recorder.stop());form.addRow(self.stop_voice)
         self.tabs.addTab(scroll_panel(properties),'Section')
@@ -156,7 +157,7 @@ class VideoEditorDialog(QDialog):
             self.volume.setValue(section.get('volume',1)*100);self.use_voice.setChecked(section.get('use_narration',False))
             if self.card_text.toPlainText()!=section.get('text',''):self.card_text.setPlainText(section.get('text',''))
             self.card_duration.setValue(section.get('duration',5));self.background=section.get('background','#10354b');self.foreground=section.get('foreground','#ffffff');self.logo=section.get('logo')
-            for item in (self.start,self.end,self.volume,self.use_voice,self.mic,self.narrate_button):
+            for item in (self.start,self.end,self.volume,self.use_voice,self.mic,self.narrate_button,self.speech_button):
                 item.setEnabled(not card);self.properties_form.setRowVisible(item,not card)
             for item in (self.card_duration,self.card_text,self.background_button,self.foreground_button,self.logo_button,self.clear_logo):
                 item.setEnabled(card);self.properties_form.setRowVisible(item,card)
@@ -449,6 +450,26 @@ class VideoEditorDialog(QDialog):
             self.tabs.setCurrentIndex(0);self.seek(0);self.narration_error=None;self.voice_player.stop();self.audio.setMuted(True)
             self.recorder.start_audio(device,self.session.new_asset('section-voiceover','.wav'),'narration')
         except Exception as exc:self.status.setText(str(exc));self._refresh()
+
+    def open_speech(self):
+        if self.busy or not self.current() or self.current()['kind']!='video':return
+        if not self.apply_properties():return
+        from .speech_dialog import SpeechDialog
+        index=self.sections.currentRow();section=self.current();self.pause_playback();self.voice_player.stop()
+        dialog=SpeechDialog(section_duration(section),section.get('speech'),lambda path,settings:self._apply_speech(index,path,settings),self,getattr(self,'speech_target',None))
+        dialog.exec();dialog.deleteLater()
+
+    def _apply_speech(self,index,path,settings):
+        if index!=self.sections.currentRow() or not 0<=index<len(self.session.timeline):raise ValueError('The selected section changed.')
+        asset=self.session.new_asset('section-voiceover','.wav');partial=asset.with_name('.'+asset.name+'.partial')
+        try:
+            shutil.copyfile(path,partial);partial.replace(asset)
+            sections=deepcopy(self.session.timeline);item=sections[index]
+            item.update(narration=asset.name,narration_origin=item['start'],use_narration=True,speech=dict(settings))
+            if not self._commit(sections,index):raise ValueError(self.status.text())
+        except BaseException:
+            partial.unlink(missing_ok=True);asset.unlink(missing_ok=True);raise
+        self.status.setText('Text-to-speech voiceover applied. Previous takes were kept in the session.')
 
     def _record_state(self,state):
         if state=='recording':self.player.play()

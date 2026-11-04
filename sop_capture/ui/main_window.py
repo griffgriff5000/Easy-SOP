@@ -1540,6 +1540,18 @@ class MainWindow(QMainWindow):
                 self.window_preview.setPixmap(pixmap.scaled(self.window_preview.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         self.run_task(lambda: self.backend.capture(target, foreground=False), finished)
 
+    def _minimize_for_capture(self):
+        self._capture_window_state = self.windowState() & ~Qt.WindowState.WindowMinimized
+        self.showMinimized()
+
+    def _restore_after_capture(self):
+        state = getattr(self, '_capture_window_state', None)
+        if state is None:
+            return
+        self._capture_window_state = None
+        self.setWindowState(state)
+        self.show()
+
     def start_capture(self):
         if not self.project or not self.target or self.active or self.busy: return
         if self.video_page.busy:self.notice('Stop training video recording or finish its export first.');return
@@ -1556,7 +1568,7 @@ class MainWindow(QMainWindow):
             self.last_tick = time.monotonic()
             self.floating.show()
             self.backend.exclude(int(self.floating.winId()))
-            self.showMinimized()
+            self._minimize_for_capture()
             self.backend.activate(self.target)
             if self.settings.value("initial"):
                 session = self.session
@@ -1569,6 +1581,7 @@ class MainWindow(QMainWindow):
                 self.session.stop()
             self.session = self.native_input = None
             self.floating.hide()
+            self._restore_after_capture()
             self.fail(exc)
         self._update_controls()
 
@@ -1602,7 +1615,7 @@ class MainWindow(QMainWindow):
             self.session = self.native_input = None
             self.flush_save()
             self._refresh_steps()
-            self.showNormal()
+            self._restore_after_capture()
             self.raise_()
             self.activateWindow()
             self.show_page(1)
@@ -1641,11 +1654,11 @@ class MainWindow(QMainWindow):
         if not self.project or (not step and not new_step) or not self.target or self.active or self.busy:
             self.notice("Select a target on the Capture page before retaking")
             return
-        self.showMinimized()
+        self._minimize_for_capture()
         try:
             self.backend.activate(self.target)
         except Exception as exc:
-            self.showNormal()
+            self._restore_after_capture()
             self.fail(exc)
             return
         target = self.target
@@ -1653,7 +1666,7 @@ class MainWindow(QMainWindow):
             time.sleep(.5)
             return self.backend.capture(target)
         def finished(value, error):
-            self.showNormal()
+            self._restore_after_capture()
             if error: self.fail(error)
             elif new_step:
                 from ..capture import CaptureResult

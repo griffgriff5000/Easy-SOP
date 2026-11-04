@@ -22,7 +22,13 @@ def main():
     parser.add_argument("--smoke-test", action="store_true", help="Launch briefly and exit")
     parser.add_argument('--update-ack',help=argparse.SUPPRESS)
     parser.add_argument('--update-token',help=argparse.SUPPRESS)
+    parser.add_argument('--speech-smoke',help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.speech_smoke:
+        from .speech_runtime import synthesize
+        try:synthesize('Packaged speech check.',21,1,args.speech_smoke)
+        except Exception:return 1
+        return 0
     app = QApplication(sys.argv[:1])
     app.setOrganizationName("SOPCaptureStudio")
     app.setApplicationName("SOPCaptureStudio")
